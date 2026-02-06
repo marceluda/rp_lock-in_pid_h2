@@ -24,7 +24,7 @@ CFLAGS += -DVERSION=$(VER)-$(BUILD_NUMBER) -DREVISION=$(REVISION)
 export CFLAGS
 
 
-.PHONY: clean clean_fpga clean_app clean_target
+.PHONY: clean clean_fpga clean_app clean_target fpga
 
 all: $(CONTROLLERHF) fpga
 
@@ -45,19 +45,18 @@ red_pitaya.bit:
 fpga.bit:
 	cp fpga/out/red_pitaya.bit ./fpga.bit
 
-fpga.bit.bin:
-	@( \
-		source /tools/Xilinx/Vivado/2020.1/settings64.sh ;\
-		echo -n "all:{ fpga.bit }" > fpga.bif ;\
-		bootgen -image  fpga.bif -arch zynq -process_bitstream bin ;\
-	)
+# fpga.bit.bin:
+# 	@( \
+# 		source /tools/Xilinx/Vivado/2020.1/settings64.sh ;\
+# 		echo -n "all:{ fpga.bit }" > fpga.bif ;\
+# 		bootgen -image  fpga.bif -arch zynq -process_bitstream bin ;\
+# 	)
 
 
 
 target/$(APP): red_pitaya.bit $(CONTROLLERHF) index.html
 	mkdir -p target/$(APP)
 	cp -r $(CONTROLLERHF) c nginx.conf fpga.conf info css js py red_pitaya.bit index.html target/$(APP)
-	rm target/$(APP)/info/icon_*.png
 	cp -r upload_app.sh target/
 	cp -r ../resources target/
 	cp ../CHANGELOG.md ../README.md target/
