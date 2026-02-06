@@ -23,6 +23,7 @@ CONTROLLER_RLD = controllerhf_rld.so
 CFLAGS += -DVERSION=$(VER)-$(BUILD_NUMBER) -DREVISION=$(REVISION)
 export CFLAGS
 
+SHELL := /bin/bash
 
 .PHONY: clean clean_fpga clean_app clean_target fpga
 
@@ -45,12 +46,12 @@ red_pitaya.bit:
 fpga.bit:
 	cp fpga/out/red_pitaya.bit ./fpga.bit
 
-# fpga.bit.bin:
-# 	@( \
-# 		source /tools/Xilinx/Vivado/2020.1/settings64.sh ;\
-# 		echo -n "all:{ fpga.bit }" > fpga.bif ;\
-# 		bootgen -image  fpga.bif -arch zynq -process_bitstream bin ;\
-# 	)
+fpga.bit.bin:
+	@( \
+		source /tools/Xilinx/Vivado/2020.1/settings64.sh ;\
+		echo -n "all:{ fpga.bit }" > fpga.bif ;\
+		bootgen -image  fpga.bif -arch zynq -process_bitstream bin ;\
+	)
 
 
 
@@ -89,6 +90,8 @@ clean_fpga:
 	$(MAKE) -C fpga clean
 	-$(RM) target -rf
 	rm red_pitaya.bit
+	rm fpga.bit
+	rm fpga.bit.bin
 	echo "BUILD_NUMBER=$$(( $BUILD_NUMBER + 1 ))" > ../_build_number
 
 clean: clean_app clean_fpga clean_target
