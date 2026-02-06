@@ -30,21 +30,6 @@ all: $(CONTROLLERHF) fpga
 
 $(CONTROLLERHF):
 	$(MAKE) -C src clean
-	# Turn on DEBUG
-	sed 's?/* *#define DEBUG 1.*?#define DEBUG 1? ' -i src/main.h
-	$(MAKE) -C src
-	mv $(CONTROLLERHF) $(CONTROLLER_DBG)
-	$(MAKE) -C src clean
-	# Turn off DEBUG
-	sed ' s?/* *#define DEBUG 1.*?// #define DEBUG 1? ' -i src/main.h
-	# Turn on RELOAD
-	sed "s?/\\*RELOAD_DOCK_START\\*/.*/\\*RELOAD_DOCK_END\\*/?/*RELOAD_DOCK_START*/ PARAMS_LOCK_PARAMS - 1 /*RELOAD_DOCK_END*/?"  -i src/main.c
-	cp src/main.c src/main_$(CONTROLLER_RLD)_.c
-	$(MAKE) -C src
-	mv $(CONTROLLERHF) $(CONTROLLER_RLD)
-	$(MAKE) -C src clean
-	# Turn off RELOAD
-	sed "s?/\\*RELOAD_DOCK_START\\*/.*/\\*RELOAD_DOCK_END\\*/?/*RELOAD_DOCK_START*/ PARAMS_NUM /*RELOAD_DOCK_END*/?"  -i src/main.c
 	$(MAKE) -C src
 	cp src/main.c src/main_$(CONTROLLERHF)_.c
 
@@ -119,7 +104,7 @@ upload: target/$(APP)
 	ssh $(RPIP) $(RPOPTS) "PATH_REDPITAYA=/opt/redpitaya /boot/sbin/rw ; rm -rf /opt/redpitaya/www/apps/$(APP) ; mkdir -p /opt/redpitaya/www/apps/$(APP)"
 	cd target/$(APP) ; scp  $(RPSCP) -r controllerhf.so css js py c nginx.conf fpga.conf index.html info red_pitaya.bit  root@$(RPIP):/opt/redpitaya/www/apps/$(APP)/
 
-upload_html: target/$(APP) target_dbg/$(APP)_DEBUG target_rld/$(APP)_RELOAD
+upload_html: target/$(APP)
 	ssh $(RPIP) $(RPOPTS) "PATH_REDPITAYA=/opt/redpitaya /boot/sbin/rw ; rm -rf /opt/redpitaya/www/apps/$(APP)/{index.html,js,css}"
 	cd target/$(APP); scp $(RPSCP) -r index.html css js root@$(RPIP):/opt/redpitaya/www/apps/$(APP)/
 
