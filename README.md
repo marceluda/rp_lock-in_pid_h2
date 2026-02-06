@@ -122,7 +122,7 @@ source settings.sh
 make
 ```
 
-Or form App folder `lock_in_mtm` :
+Or form App folder `lock_in+pid_harmonic2` :
 
 ```bash
 source ../settings.sh
