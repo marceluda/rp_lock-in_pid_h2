@@ -357,13 +357,13 @@ class red_pitaya_control():
 #%%
 class red_pitaya_app():
     """
-    This class is used to control RedPitaya (RP) lock_in+pid_harmonic app using memory registers
+    This class is used to control RedPitaya (RP) lock_in+pid_harmonic2 app using memory registers
     from the RP itself. The object lets you set and load regs, control oscilloscope and lock,
     load plots from oscilloscope, stream regs values to binary files in localhost,
     plot loaded data and keep log of all the activity.
 
     Example:
-        rp=red_pitaya_lock(AppName='lock_in+pid_harmonic',host='rp-f01d89.local',port=22,filename='/home/user/experience01.npz')
+        rp=red_pitaya_lock(AppName='lock_in+pid_harmonic2',host='rp-f01d89.local',port=22,filename='/home/user/experience01.npz')
 
     This creates the rp object associated to RP 'rp-f01d89.local' , connecting through port 22
     and will save any data to the file '/home/user/experience01.npz'.
@@ -576,7 +576,7 @@ class red_pitaya_app():
 
         with open("key.pub", 'w') as f:
             f.write("{:s} {:s}".format(private_key.get_name(), private_key.get_base64()) )
-            f.write(" Generated automatically for lock_in+pid_harmonic app")
+            f.write(" Generated automatically for lock_in+pid_harmonic2 app")
             print('public key file "key.pub" was created')
         return True
 
@@ -2185,8 +2185,8 @@ class read_dump():
 #%%
 
 if __name__ == '__main__':
-    rp=red_pitaya_app(AppName='lock_in+pid_harmonic',host='10.0.32.207',port=22)
-    rp=red_pitaya_app(AppName='lock_in+pid_harmonic',host='10.0.32.207',port=22,password='root')
+    rp=red_pitaya_app(AppName='lock_in+pid_harmonic2',host='10.0.32.207',port=22)
+    rp=red_pitaya_app(AppName='lock_in+pid_harmonic2',host='10.0.32.207',port=22,password='root')
 
 
 
@@ -2205,13 +2205,13 @@ import requests
 import os
 
 
-url='http://localhost/lock_in+pid_harmonic'
+url='http://localhost/lock_in+pid_harmonic2'
 Appame = os.path.realpath(__file__).split('/')[5]
 
 res = requests.get('http://localhost/'+Appame, params={ 'type': 'run' } )
 #print(res)
 
-# http://10.0.32.207:3080/bazaar?start=lock_in+pid_harmonic
+# http://10.0.32.207:3080/bazaar?start=lock_in+pid_harmonic2
 
 res = requests.get('http://localhost/bazaar?start='+Appame)
 print(res.text)

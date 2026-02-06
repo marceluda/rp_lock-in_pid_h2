@@ -20,7 +20,7 @@ sys.path.append(r'C:\Users\Nestor\Desktop\lolo\lib')
 
 from control_hugo import red_pitaya_control,red_pitaya_app
 
-AppName      = 'lock_in+pid_harmonic'
+AppName      = 'lock_in+pid_harmonic2'
 host         = '10.0.32.207'
 port         = 22  # default port
 trigger_type = 6   # 6 is externa trigger

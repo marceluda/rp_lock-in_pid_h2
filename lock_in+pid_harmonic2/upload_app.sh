@@ -1,6 +1,6 @@
 #!/bin/bash
 
-APP="lock_in+pid_harmonic"
+APP="lock_in+pid_harmonic2"
 
 
 

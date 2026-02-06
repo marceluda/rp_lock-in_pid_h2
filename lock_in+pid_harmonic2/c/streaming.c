@@ -21,7 +21,7 @@
 #define LOCK_FPGA_BASE_ADDR 0x40600000
 #define LOCK_FPGA_BASE_SIZE 0x100000
 
-#define STREAM_CMD "/opt/redpitaya/www/apps/lock_in+pid_harmonic/c/stream_tcp_osc_cmd"
+#define STREAM_CMD "/opt/redpitaya/www/apps/lock_in+pid_harmonic2/c/stream_tcp_osc_cmd"
 
 #define DEBUG 1
 

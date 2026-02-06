@@ -12,7 +12,7 @@ from control_finn import RedPitayaApp, reg_labels
 
 
 
-rp =  RedPitayaApp('http://rp-XXXXXX.local/lock_in+pid_harmonic/?type=run')
+rp =  RedPitayaApp('http://rp-XXXXXX.local/lock_in+pid_harmonic2/?type=run')
 
 
 

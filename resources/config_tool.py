@@ -39,7 +39,7 @@ PWD = os.environ['PWD']
 if PWD.find('rp_lock-in_pid_h')>0:
     folder = PWD[:PWD.find('rp_lock-in_pid_h')+len('rp_lock-in_pid_h')]
 
-APP='lock_in+pid_harmonic'
+APP='lock_in+pid_harmonic2'
 
 if __name__ == "__main__":
 

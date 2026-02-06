@@ -179,7 +179,7 @@ class Lock():
         # This is just for autocompletion inIPython
         return list(self.__dict__.keys())+list(self._registers.keys())
 
-# l = lock('http://rp-f00a3b.local/lock_in+pid_harmonic')
+# l = lock('http://rp-f00a3b.local/lock_in+pid_harmonic2')
 
 
 #
@@ -439,7 +439,7 @@ class Osc():
         return True
 
 
-# osc = Osc('http://rp-f00a3b.local/lock_in+pid_harmonic')
+# osc = Osc('http://rp-f00a3b.local/lock_in+pid_harmonic2')
 
 
 #
@@ -807,7 +807,7 @@ class RedPitayaApp():
 
 
 
-# rp = RedPitayaApp('http://rp-f00a3b.local/lock_in+pid_harmonic/?type=run')
+# rp = RedPitayaApp('http://rp-f00a3b.local/lock_in+pid_harmonic2/?type=run')
 
 
 # rp.save_params('med00.npy')
@@ -856,9 +856,9 @@ class RedPitayaApp():
 """
 import bs4
 
-# h    = bs4.BeautifulSoup( requests.get('http://rp-f00a3b.local/lock_in+pid_harmonic/').text , "lxml")
+# h    = bs4.BeautifulSoup( requests.get('http://rp-f00a3b.local/lock_in+pid_harmonic2/').text , "lxml")
 
-h    = bs4.BeautifulSoup( requests.get('http://192.168.1.117/lock_in+pid_harmonic/').text , "lxml")
+h    = bs4.BeautifulSoup( requests.get('http://192.168.1.117/lock_in+pid_harmonic2/').text , "lxml")
 
 
 
