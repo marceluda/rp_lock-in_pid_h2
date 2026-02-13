@@ -77,18 +77,21 @@ You will need the following to build the Red Pitaya components:
 sudo apt-get install make u-boot-tools curl xz-utils nano
 ```
 
-2. Xilinx [Vivado 2015.2](http://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/vivado-design-tools/2015-2.html) FPGA development tools. The SDK (bare metal toolchain) must also be installed, be careful during the install process to select it. Preferably use the default install location.
+2. a. Xilinx [Vivado 2015.2](https://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/vivado-design-tools/archive.html) FPGA development tools. The SDK (bare metal toolchain) must also be installed, be careful during the install process to select it. Preferably use the default install location.
+
+2. b. The new OS version 2.0 requires a command that is included in more recent version of Vivado: Xilinx [Vivado 2020.1](https://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/vivado-design-tools/archive.html). More info in [Red Pitaya documentation](https://redpitaya-knowledge-base.readthedocs.io/en/latest/learn_fpga/3_vivado_env/tutorfpga1.html)
 
 3. Linaro [ARM toolchain](https://releases.linaro.org/14.11/components/toolchain/binaries/arm-linux-gnueabihf/) for cross compiling Linux applications. We recommend to install it to `/opt/linaro/` since build process instructions relly on it.
 
 ```bash
-TOOLCHAIN="http://releases.linaro.org/14.11/components/toolchain/binaries/arm-linux-gnueabihf/gcc-linaro-4.9-2014.11-x86_64_arm-linux-gnueabihf.tar.xz"
-#TOOLCHAIN="http://releases.linaro.org/15.02/components/toolchain/binaries/arm-linux-gnueabihf/gcc-linaro-4.9-2015.02-3-x86_64_arm-linux-gnueabihf.tar.xz"
+# TOOLCHAIN="http://releases.linaro.org/14.11/components/toolchain/binaries/arm-linux-gnueabihf/gcc-linaro-4.9-2014.11-x86_64_arm-linux-gnueabihf.tar.xz"
+TOOLCHAIN="http://releases.linaro.org/15.02/components/toolchain/binaries/arm-linux-gnueabihf/gcc-linaro-4.9-2015.02-3-x86_64_arm-linux-gnueabihf.tar.xz"
 curl -O $TOOLCHAIN
 sudo mkdir -p /opt/linaro
 sudo chown $USER:$USER /opt/linaro
 tar -xpf *linaro*.tar.xz -C /opt/linaro
 ```
+
 
 **NOTE:** you can skip installing Vivado tools, if you only wish to compile user space software.
 
@@ -108,7 +111,7 @@ sudo apt-get install libx32gcc-4.8-dev
 sudo apt-get install libc6-dev-i386
 ```
 
-The building was tested on Ubuntu 16.04 Linux x86_64 
+The building was tested on Ubuntu 24.04.02 Linux x86_64 
 
 
 ## Building
