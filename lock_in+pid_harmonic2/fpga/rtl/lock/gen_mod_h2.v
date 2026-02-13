@@ -9,7 +9,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 //(* keep_hierarchy = "yes" *)
-module gen_mod_h
+module gen_mod_h2
 (
     input clk,rst,
     input           [12-1:0] phase_A,    // Phase control
@@ -22,7 +22,7 @@ module gen_mod_h
 );
 
 
-    reg  [12-1:0] phase_tick_A;
+    reg  [12-1:0] phase_tick_A,phase_tick_B;
     wire          cnt_next_zero;
 
 
@@ -149,35 +149,50 @@ module gen_mod_h
 
     // read address engine *****************************************************************
     // for cos_A & sin_A :  cnt1 , r_addr1
-    reg  [10-1:0]  cnt1 ;
-    wire [11-1:0]  cnt1_next ;
-    reg  [ 2-1:0]  quad_bit1 ;
-    wire [ 3-1:0]  quad_bit1_next ;
-    wire           quad_add1;
+    reg  [10-1:0]  cnt1, cnt2 ;
+    wire [11-1:0]  cnt1_next,cnt2_next ;
+    reg  [ 2-1:0]  quad_bit1, quad_bit2 ;
+    wire [ 3-1:0]  quad_bit1_next, quad_bit2_next ;
+    wire           quad_add1, quad_add2;
 
     always @(posedge clk)
         if (rst)
         begin
             cnt1      <=   10'b0   ;
             quad_bit1 <=    2'b0   ;
+            cnt2      <=   10'b0   ;
+            quad_bit2 <=    2'b0   ;
         end
         else
         begin
             cnt1       <=  cnt1_next[10-1:0] ;
             quad_bit1  <=  quad_bit1_next      ;
+            cnt2       <=  cnt2_next[10-1:0] ;
+            quad_bit2  <=  quad_bit2_next      ;
         end
 
     assign quad_add1      = (cnt1==10'd629 & quad_bit1==2'b00 ) |
                             (cnt1==10'd000 & quad_bit1==2'b01 ) |
                             (cnt1==10'd629 & quad_bit1==2'b10 ) |
                             (cnt1==10'd000 & quad_bit1==2'b11 )   ;
+    
+    assign quad_add2      = (cnt2==10'd629 & quad_bit2==2'b00 ) |
+                            (cnt2==10'd000 & quad_bit2==2'b01 ) |
+                            (cnt2==10'd629 & quad_bit2==2'b10 ) |
+                            (cnt2==10'd000 & quad_bit2==2'b11 )   ;
+
 
     //assign quad_bit1_next = quad_add1 ? quad_bit1 + tau_tick : quad_bit1 ;
     assign quad_bit1_next = ( cntu == phase_tick_A ) ? 2'b00  : quad_bit1 + (tau_tick&quad_add1) ;
+    assign quad_bit2_next = ( cntu == phase_tick_B ) ? 2'b00  : quad_bit2 + (tau_tick&quad_add2) ;
 
     assign cnt1_next      = ( cntu == phase_tick_A ) /*| ( cnt_next_zero & phase_A==12'b0 ) */? 10'b0   :
                             quad_add1    ? cnt1             :
                             quad_bit1[0] ? cnt1 - tau_tick  :  cnt1 + tau_tick  ;
+    assign cnt2_next      = ( cntu == phase_tick_B ) /*| ( cnt_next_zero & phase_B==12'b0 ) */? 10'b0   :
+                            quad_add2    ? cnt2             :
+                            quad_bit2[0] ? cnt2 - tau_tick  :  cnt2 + tau_tick  ;
+    
 
 
 
@@ -298,10 +313,9 @@ module gen_mod_h
     assign cos_A   = quad_bit1[1]^quad_bit1[0]   ?  $signed(-memory_cosA_r[cnt1] ) : memory_cosA_r[cnt1] ;
     assign sin_A   = quad_bit1[1]                ?  $signed(-memory_sinA_r[cnt1])  : memory_sinA_r[cnt1] ;
 
-    assign cos_B   = cos_ref ;
-    assign sin_B   = cos_ref ;
+    assign cos_B   = quad_bit2[1]^quad_bit2[0]   ?  $signed(-memory_cosB_r[cnt2] ) : memory_cosB_r[cnt2] ;
+    assign sin_B   = quad_bit2[1]                ?  $signed(-memory_sinB_r[cnt2])  : memory_sinB_r[cnt2] ;
 
-    
 
 
 endmodule

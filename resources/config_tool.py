@@ -36,8 +36,8 @@ from datetime import datetime
 
 PWD = os.environ['PWD']
 
-if PWD.find('rp_lock-in_pid_h')>0:
-    folder = PWD[:PWD.find('rp_lock-in_pid_h')+len('rp_lock-in_pid_h')]
+if PWD.find('rp_lock-in_pid_h2')>0:
+    folder = PWD[:PWD.find('rp_lock-in_pid_h2')+len('rp_lock-in_pid_h2')]
 
 APP='lock_in+pid_harmonic2'
 
@@ -1726,11 +1726,11 @@ h['lock_stream_cmd'    ].control.text = 'Start'
 def parse_sw(val):
     values=[
              ['in1_m_in2.*','in1-in2'],
-             ['pid(\w)_out.*','PID \\1 out'],
-             ["14'b1?0+\s*",'0'],
-             [".*sq_([a-z]*)_b.*",'square \\1 (bin)'],
-             ['ramp_(\w)','Ramp \\1'],
-             ['error_\w*', 'error']
+             [r'pid(\w)_out.*',r'PID \\1 out'],
+             [r"14'b1?0+\s*",'0'],
+             [r".*sq_([a-z]*)_b.*",r'square \\1 (bin)'],
+             [r'ramp_(\w)',r'Ramp \\1'],
+             [r'error_\w*', r'error']
          ]
     for i in values:
         if bool(re.match(i[0],val)):
@@ -1749,7 +1749,7 @@ def get_muxer(filename,name):
             lin=line.strip(' \n\t')
             if '//' in lin:
                 lin=lin[0:lin.find('//')]
-            if bool(re.match('.*muxer.*\(',lin)):
+            if bool(re.match(r'.*muxer.*\(',lin)):
                 out=True
             if out:
                 #print(lin)
@@ -1759,7 +1759,7 @@ def get_muxer(filename,name):
                 out=False
                 tmp=''.join(txt)
                 txt=[]
-                if bool(re.match('.*sel *\( *'+name+' *\).*',tmp)):
+                if bool(re.match(r'.*sel *\( *'+name+r' *\).*',tmp)):
                     sel=tmp
                 #txt=[]
         txt=sel.split(')')
@@ -1767,7 +1767,7 @@ def get_muxer(filename,name):
         for i in txt:
             i=i.strip(' \n\t')
             if '.in' in i:
-                ii=re.search('.*\((.*)',i)
+                ii=re.search(r'.*\((.*)',i)
                 ret.append( parse_sw( ii.group(1).strip(' \n\t')  ))
         #print( '["' + '","'.join(ret) + '"]')
         return ret
@@ -1999,8 +1999,8 @@ if True:  # input_select  *************************************************
     txt=('\n'.join(txt))
 
 html_global_configs.append(
-        html_global_config( regex_start = ' *var *switches *= *\[',
-                            regex_end   = '.*\] *;.*',
+        html_global_config( regex_start = r' *var *switches *= *\[',
+                            regex_end   = r'.*\] *;.*',
                             text        =  txt)
         )
 
@@ -2047,8 +2047,8 @@ if True:  # input_number  *************************************************
     txt=('\n'.join(txt))
 
 html_global_configs.append(
-        html_global_config( regex_start = ' *var *input_number *= *\[',
-                            regex_end   = '.*\] *;.*',
+        html_global_config( regex_start = r' *var *input_number *= *\[',
+                            regex_end   = r'.*\] *;.*',
                             text        =  txt)
         )
 
@@ -2095,8 +2095,8 @@ if True:  # LOADPARAMS  *************************************************
     #print(txt)
 
 html_global_configs.append(
-        html_global_config( regex_start = ' *// *\[LOLO DOCK LOADPARAMS\].*',
-                            regex_end   = '.*// *\[LOLO DOCK LOADPARAMS END\].*',
+        html_global_config( regex_start = r' *// *\[LOLO DOCK LOADPARAMS\].*',
+                            regex_end   = r'.*// *\[LOLO DOCK LOADPARAMS END\].*',
                             text        =  txt)
         )
 
@@ -2237,8 +2237,8 @@ if False:
     #print('\n'.join(txt))
 
     py_global_config.append(
-            html_global_config( regex_start = ' *# *\[LOLO DOCK\] *',
-                                regex_end   = ' *# *\[LOLO DOCK END\]',
+            html_global_config( regex_start = r' *# *\[LOLO DOCK\] *',
+                                regex_end   = r' *# *\[LOLO DOCK END\]',
                                 text        = txt )
             )
 
@@ -2270,15 +2270,15 @@ if False:
     #print('\n'.join(txt))
 
     py_global_config.append(
-            html_global_config( regex_start = ' *# *\[LOLOSET DOCK\] *',
-                                regex_end   = ' *# *\[LOLOSET DOCK END\]',
+            html_global_config( regex_start = r' *# *\[LOLOSET DOCK\] *',
+                                regex_end   = r' *# *\[LOLOSET DOCK END\]',
                                 text        = txt )
             )
 
 
 py_global_config.append(
-        html_global_config( regex_start = ' *# *\[REGSET DOCK\] *',
-                            regex_end   = ' *# *\[REGSET DOCK END\]',
+        html_global_config( regex_start = r' *# *\[REGSET DOCK\] *',
+                            regex_end   = r' *# *\[REGSET DOCK END\]',
                             text        = '# [REGSET DOCK]\n'+f.print_hugo(ret=True)+'# [REGSET DOCK END]\n' )
         )
 
