@@ -197,11 +197,11 @@ typedef struct rp_osc_meas_res_s {
 #define LOCK_RAMP_DIRECTION             139
 #define LOCK_RAMP_SAWTOOTH              140
 #define LOCK_RAMP_B_FACTOR              141
-#define LOCK_SIN_REF                    142
-#define LOCK_COS_REF                    143
-#define LOCK_COS_1F                     144
-#define LOCK_COS_2F                     145
-#define LOCK_COS_3F                     146
+#define LOCK_COS_REF                    142
+#define LOCK_COS_A                      143
+#define LOCK_SIN_A                      144
+#define LOCK_COS_B                      145
+#define LOCK_SIN_B                      146
 #define LOCK_IN1                        147
 #define LOCK_IN2                        148
 #define LOCK_OUT1                       149

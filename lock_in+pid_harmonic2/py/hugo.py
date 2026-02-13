@@ -291,11 +291,11 @@ li.add( fpga_reg(name='ramp_enable'        , index= 44, rw=True , nbits= 1,signe
 li.add( fpga_reg(name='ramp_direction'     , index= 45, rw=True , nbits= 1,signed=False) )
 li.add( fpga_reg(name='ramp_sawtooth'      , index= 46, rw=True , nbits= 1,signed=False) )
 li.add( fpga_reg(name='ramp_B_factor'      , index= 47, rw=True , nbits=14,signed=True ) )
-li.add( fpga_reg(name='sin_ref'            , index= 48, rw=False, nbits=14,signed=True ) )
-li.add( fpga_reg(name='cos_ref'            , index= 49, rw=False, nbits=14,signed=True ) )
-li.add( fpga_reg(name='cos_1f'             , index= 50, rw=False, nbits=14,signed=True ) )
-li.add( fpga_reg(name='cos_2f'             , index= 51, rw=False, nbits=14,signed=True ) )
-li.add( fpga_reg(name='cos_3f'             , index= 52, rw=False, nbits=14,signed=True ) )
+li.add( fpga_reg(name='cos_ref'            , index= 48, rw=False, nbits=14,signed=True ) )
+li.add( fpga_reg(name='cos_A'              , index= 49, rw=False, nbits=14,signed=True ) )
+li.add( fpga_reg(name='sin_A'              , index= 50, rw=False, nbits=14,signed=True ) )
+li.add( fpga_reg(name='cos_B'              , index= 51, rw=False, nbits=14,signed=True ) )
+li.add( fpga_reg(name='sin_B'              , index= 52, rw=False, nbits=14,signed=True ) )
 li.add( fpga_reg(name='in1'                , index= 53, rw=False, nbits=14,signed=True ) )
 li.add( fpga_reg(name='in2'                , index= 54, rw=False, nbits=14,signed=True ) )
 li.add( fpga_reg(name='out1'               , index= 55, rw=False, nbits=14,signed=True ) )
@@ -343,6 +343,8 @@ li.add( fpga_reg(name='stream_port'        , index= 96, rw=True , nbits=32,signe
 li.add( fpga_reg(name='stream_rate'        , index= 97, rw=True , nbits=17,signed=False) )
 li.add( fpga_reg(name='stream_cmd'         , index= 98, rw=True , nbits=32,signed=False) )
 # [REGSET DOCK END]
+
+
 
 
 

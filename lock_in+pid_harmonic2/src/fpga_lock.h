@@ -415,45 +415,45 @@ typedef struct lock_reg_t {
       */
     int32_t  ramp_B_factor;
     
-    /** @brief Offset 20'h000C0 - sin_ref
+    /** @brief Offset 20'h000C0 - cos_ref
       *  lock-in modulation sinus harmonic reference
-      *
-      *  bits [31:14] - Reserved
-      *  bits [13: 0] - Data
-      */
-    int32_t  sin_ref;
-    
-    /** @brief Offset 20'h000C4 - cos_ref
-      *  lock-in modulation cosinus harmonic reference
       *
       *  bits [31:14] - Reserved
       *  bits [13: 0] - Data
       */
     int32_t  cos_ref;
     
-    /** @brief Offset 20'h000C8 - cos_1f
+    /** @brief Offset 20'h000C4 - cos_A
+      *  lock-in modulation cosinus harmonic reference
+      *
+      *  bits [31:14] - Reserved
+      *  bits [13: 0] - Data
+      */
+    int32_t  cos_A;
+    
+    /** @brief Offset 20'h000C8 - sin_A
       *  lock-in modulation sinus harmonic signal with phase relation to reference
       *
       *  bits [31:14] - Reserved
       *  bits [13: 0] - Data
       */
-    int32_t  cos_1f;
+    int32_t  sin_A;
     
-    /** @brief Offset 20'h000CC - cos_2f
+    /** @brief Offset 20'h000CC - cos_B
       *  lock-in modulation sinus harmonic signal with phase relation to reference and double frequency
       *
       *  bits [31:14] - Reserved
       *  bits [13: 0] - Data
       */
-    int32_t  cos_2f;
+    int32_t  cos_B;
     
-    /** @brief Offset 20'h000D0 - cos_3f
+    /** @brief Offset 20'h000D0 - sin_B
       *  lock-in modulation sinus harmonic signal with phase relation to reference and triple frequency
       *
       *  bits [31:14] - Reserved
       *  bits [13: 0] - Data
       */
-    int32_t  cos_3f;
+    int32_t  sin_B;
     
     /** @brief Offset 20'h000D4 - in1
       *  Input signal IN1

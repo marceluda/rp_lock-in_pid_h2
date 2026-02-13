@@ -366,11 +366,11 @@ static rp_app_params_t rp_main_params[PARAMS_NUM+1] = {
     { "lock_ramp_direction"           ,      0, 1, 0,            0,            1 }, /** ramp starting direction (up/down) **/
     { "lock_ramp_sawtooth"            ,      0, 1, 0,            0,            1 }, /** ramp Sawtooth waveform **/
     { "lock_ramp_B_factor"            ,   4096, 1, 0,        -4096,         4096 }, /** proportional factor ramp_A/ramp_B. // ramp_B=ramp_A*ramp_B_factor/4096 **/
-    { "lock_sin_ref"                  ,      0, 0, 1,        -8192,         8191 }, /** lock-in modulation sinus harmonic reference **/
-    { "lock_cos_ref"                  ,      0, 0, 1,        -8192,         8191 }, /** lock-in modulation cosinus harmonic reference **/
-    { "lock_cos_1f"                   ,      0, 0, 1,        -8192,         8191 }, /** lock-in modulation sinus harmonic signal with phase relation to reference **/
-    { "lock_cos_2f"                   ,      0, 0, 1,        -8192,         8191 }, /** lock-in modulation sinus harmonic signal with phase relation to reference and double frequency **/
-    { "lock_cos_3f"                   ,      0, 0, 1,        -8192,         8191 }, /** lock-in modulation sinus harmonic signal with phase relation to reference and triple frequency **/
+    { "lock_cos_ref"                  ,      0, 0, 1,        -8192,         8191 }, /** lock-in modulation sinus harmonic reference **/
+    { "lock_cos_A"                    ,      0, 0, 1,        -8192,         8191 }, /** lock-in modulation cosinus harmonic reference **/
+    { "lock_sin_A"                    ,      0, 0, 1,        -8192,         8191 }, /** lock-in modulation sinus harmonic signal with phase relation to reference **/
+    { "lock_cos_B"                    ,      0, 0, 1,        -8192,         8191 }, /** lock-in modulation sinus harmonic signal with phase relation to reference and double frequency **/
+    { "lock_sin_B"                    ,      0, 0, 1,        -8192,         8191 }, /** lock-in modulation sinus harmonic signal with phase relation to reference and triple frequency **/
     { "lock_in1"                      ,      0, 0, 1,        -8192,         8191 }, /** Input signal IN1 **/
     { "lock_in2"                      ,      0, 0, 1,        -8192,         8191 }, /** Input signal IN2 **/
     { "lock_out1"                     ,      0, 0, 1,        -8192,         8191 }, /** signal for RP RF DAC Out1 **/

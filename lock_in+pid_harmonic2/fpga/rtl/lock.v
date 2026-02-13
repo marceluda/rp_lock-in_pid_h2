@@ -93,7 +93,7 @@ module lock(
     reg  signed [14-1:0] aux_A,aux_B;
     
     // modulation --------------------------
-    wire signed [14-1:0] sin_ref,cos_ref,cos_1f,cos_2f,cos_3f;
+    wire signed [14-1:0] cos_ref,cos_A,sin_A,cos_B,sin_B;
     
     // outputs --------------------------
     reg         [ 4-1:0] out1_sw,out2_sw;
@@ -1097,11 +1097,11 @@ module lock(
             if (sys_addr[19:0]==20'h000B4)  ramp_direction        <= |sys_wdata[32-1: 0] ; // ramp starting direction (up/down)
             if (sys_addr[19:0]==20'h000B8)  ramp_sawtooth         <= |sys_wdata[32-1: 0] ; // ramp Sawtooth wave form
             if (sys_addr[19:0]==20'h000BC)  ramp_B_factor         <=  sys_wdata[14-1: 0] ; // proportional factor ramp_A/ramp_B. // ramp_B=ramp_A*ramp_B_factor/4096
-          //if (sys_addr[19:0]==20'h000C0)  sin_ref               <=  sys_wdata[14-1: 0] ; // lock-in modulation sinus harmonic reference
-          //if (sys_addr[19:0]==20'h000C4)  cos_ref               <=  sys_wdata[14-1: 0] ; // lock-in modulation cosinus harmonic reference
-          //if (sys_addr[19:0]==20'h000C8)  cos_1f                <=  sys_wdata[14-1: 0] ; // lock-in modulation sinus harmonic signal with phase relation to reference
-          //if (sys_addr[19:0]==20'h000CC)  cos_2f                <=  sys_wdata[14-1: 0] ; // lock-in modulation sinus harmonic signal with phase relation to reference and double frequency
-          //if (sys_addr[19:0]==20'h000D0)  cos_3f                <=  sys_wdata[14-1: 0] ; // lock-in modulation sinus harmonic signal with phase relation to reference and triple frequency
+          //if (sys_addr[19:0]==20'h000C0)  cos_ref               <=  sys_wdata[14-1: 0] ; // lock-in modulation sinus harmonic reference
+          //if (sys_addr[19:0]==20'h000C4)  cos_A                 <=  sys_wdata[14-1: 0] ; // lock-in modulation cosinus harmonic reference
+          //if (sys_addr[19:0]==20'h000C8)  sin_A                 <=  sys_wdata[14-1: 0] ; // lock-in modulation sinus harmonic signal with phase relation to reference
+          //if (sys_addr[19:0]==20'h000CC)  cos_B                 <=  sys_wdata[14-1: 0] ; // lock-in modulation sinus harmonic signal with phase relation to reference and double frequency
+          //if (sys_addr[19:0]==20'h000D0)  sin_B                 <=  sys_wdata[14-1: 0] ; // lock-in modulation sinus harmonic signal with phase relation to reference and triple frequency
           //if (sys_addr[19:0]==20'h000D4)  in1                   <=  sys_wdata[14-1: 0] ; // Input signal IN1
           //if (sys_addr[19:0]==20'h000D8)  in2                   <=  sys_wdata[14-1: 0] ; // Input signal IN2
           //if (sys_addr[19:0]==20'h000DC)  out1                  <=  sys_wdata[14-1: 0] ; // signal for RP RF DAC Out1
@@ -1211,11 +1211,11 @@ module lock(
             20'h000B4 : begin sys_ack <= sys_en;  sys_rdata <= {  31'b0                   ,   ramp_direction  }; end // ramp starting direction (up/down)
             20'h000B8 : begin sys_ack <= sys_en;  sys_rdata <= {  31'b0                   ,    ramp_sawtooth  }; end // ramp Sawtooth wave form
             20'h000BC : begin sys_ack <= sys_en;  sys_rdata <= {  {18{ramp_B_factor[13]}} ,    ramp_B_factor  }; end // proportional factor ramp_A/ramp_B. // ramp_B=ramp_A*ramp_B_factor/4096
-            20'h000C0 : begin sys_ack <= sys_en;  sys_rdata <= {  {18{sin_ref[13]}}       ,          sin_ref  }; end // lock-in modulation sinus harmonic reference
-            20'h000C4 : begin sys_ack <= sys_en;  sys_rdata <= {  {18{cos_ref[13]}}       ,          cos_ref  }; end // lock-in modulation cosinus harmonic reference
-            20'h000C8 : begin sys_ack <= sys_en;  sys_rdata <= {  {18{cos_1f[13]}}        ,           cos_1f  }; end // lock-in modulation sinus harmonic signal with phase relation to reference
-            20'h000CC : begin sys_ack <= sys_en;  sys_rdata <= {  {18{cos_2f[13]}}        ,           cos_2f  }; end // lock-in modulation sinus harmonic signal with phase relation to reference and double frequency
-            20'h000D0 : begin sys_ack <= sys_en;  sys_rdata <= {  {18{cos_3f[13]}}        ,           cos_3f  }; end // lock-in modulation sinus harmonic signal with phase relation to reference and triple frequency
+            20'h000C0 : begin sys_ack <= sys_en;  sys_rdata <= {  {18{cos_ref[13]}}       ,          cos_ref  }; end // lock-in modulation sinus harmonic reference
+            20'h000C4 : begin sys_ack <= sys_en;  sys_rdata <= {  {18{cos_A[13]}}         ,            cos_A  }; end // lock-in modulation cosinus harmonic reference
+            20'h000C8 : begin sys_ack <= sys_en;  sys_rdata <= {  {18{sin_A[13]}}         ,            sin_A  }; end // lock-in modulation sinus harmonic signal with phase relation to reference
+            20'h000CC : begin sys_ack <= sys_en;  sys_rdata <= {  {18{cos_B[13]}}         ,            cos_B  }; end // lock-in modulation sinus harmonic signal with phase relation to reference and double frequency
+            20'h000D0 : begin sys_ack <= sys_en;  sys_rdata <= {  {18{sin_B[13]}}         ,            sin_B  }; end // lock-in modulation sinus harmonic signal with phase relation to reference and triple frequency
             20'h000D4 : begin sys_ack <= sys_en;  sys_rdata <= {  {18{in1[13]}}           ,              in1  }; end // Input signal IN1
             20'h000D8 : begin sys_ack <= sys_en;  sys_rdata <= {  {18{in2[13]}}           ,              in2  }; end // Input signal IN2
             20'h000DC : begin sys_ack <= sys_en;  sys_rdata <= {  {18{out1[13]}}          ,             out1  }; end // signal for RP RF DAC Out1
