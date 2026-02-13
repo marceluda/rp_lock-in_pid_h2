@@ -37,7 +37,7 @@ $(CONTROLLERHF):
 
 app: $(CONTROLLERHF)
 
-fpga: red_pitaya.bit fpga.bit
+fpga: red_pitaya.bit fpga.bit fpga.bit.bin
 
 red_pitaya.bit:
 	cd fpga && $(MAKE) out/red_pitaya.bit
