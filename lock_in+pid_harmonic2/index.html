@@ -134,14 +134,15 @@
                        'lock_sf_jumpB,lock_sf_start,lock_sf_AfrzO,lock_sf_AfrzI,lock_sf_BfrzO,lock_sf_BfrzI,lock_signal_sw,lock_sg_amp0,'+
                        'lock_sg_amp1,lock_sg_amp2,lock_sg_amp3,lock_lpf_F0_tau,lock_lpf_F0_order,lock_lpf_F1_tau,lock_lpf_F1_order,lock_lpf_F2_tau,'+
                        'lock_lpf_F2_order,lock_lpf_F3_tau,lock_lpf_F3_order,lock_error_sw,lock_error_offset,lock_mod_out1,lock_mod_out2,'+
-                       'lock_gen_mod_phase,lock_gen_mod_hp,lock_ramp_step,lock_ramp_low_lim,lock_ramp_hig_lim,lock_ramp_reset,lock_ramp_enable,'+
-                       'lock_ramp_direction,lock_ramp_sawtooth,lock_ramp_B_factor,lock_read_ctrl,lock_pidA_sw,lock_pidA_PSR,lock_pidA_ISR,'+
-                       'lock_pidA_DSR,lock_pidA_SAT,lock_pidA_sp,lock_pidA_kp,lock_pidA_ki,lock_pidA_kd,lock_pidA_irst,lock_pidA_freeze,'+
-                       'lock_pidA_ifreeze,lock_pidB_sw,lock_pidB_PSR,lock_pidB_ISR,lock_pidB_DSR,lock_pidB_SAT,lock_pidB_sp,lock_pidB_kp,'+
-                       'lock_pidB_ki,lock_pidB_kd,lock_pidB_irst,lock_pidB_freeze,lock_pidB_ifreeze,lock_aux_A,lock_aux_B,lock_stream_ip,'+
-                       'lock_stream_port,lock_stream_rate,lock_stream_cmd,lock_ctrl_aux_lock_now,lock_ctrl_aux_launch_lock_trig,lock_ctrl_aux_pidB_enable_ctrl,'+
-                       'lock_ctrl_aux_pidA_enable_ctrl,lock_ctrl_aux_ramp_enable_ctrl,lock_ctrl_aux_set_pidB_enable,lock_ctrl_aux_set_pidA_enable,'+
-                       'lock_ctrl_aux_set_ramp_enable,lock_ctrl_aux_trig_type,lock_ctrl_aux_lock_trig_rise,lock_mod_harmonic_on';
+                       'lock_gen_mod_phase_A,lock_gen_mod_phase_B,lock_gen_mod_hp,lock_ramp_step,lock_ramp_low_lim,lock_ramp_hig_lim,'+
+                       'lock_ramp_reset,lock_ramp_enable,lock_ramp_direction,lock_ramp_sawtooth,lock_ramp_B_factor,lock_read_ctrl,lock_pidA_sw,'+
+                       'lock_pidA_PSR,lock_pidA_ISR,lock_pidA_DSR,lock_pidA_SAT,lock_pidA_sp,lock_pidA_kp,lock_pidA_ki,lock_pidA_kd,lock_pidA_irst,'+
+                       'lock_pidA_freeze,lock_pidA_ifreeze,lock_pidB_sw,lock_pidB_PSR,lock_pidB_ISR,lock_pidB_DSR,lock_pidB_SAT,lock_pidB_sp,'+
+                       'lock_pidB_kp,lock_pidB_ki,lock_pidB_kd,lock_pidB_irst,lock_pidB_freeze,lock_pidB_ifreeze,lock_aux_A,lock_aux_B,'+
+                       'lock_stream_ip,lock_stream_port,lock_stream_rate,lock_stream_cmd,lock_ctrl_aux_lock_now,lock_ctrl_aux_launch_lock_trig,'+
+                       'lock_ctrl_aux_pidB_enable_ctrl,lock_ctrl_aux_pidA_enable_ctrl,lock_ctrl_aux_ramp_enable_ctrl,lock_ctrl_aux_set_pidB_enable,'+
+                       'lock_ctrl_aux_set_pidA_enable,lock_ctrl_aux_set_ramp_enable,lock_ctrl_aux_trig_type,lock_ctrl_aux_lock_trig_rise,'+
+                       'lock_mod_harmonic_on';
 
   config_params_keys = config_params_txts.split(",");
 
@@ -1178,9 +1179,10 @@
 
     // Number inputs
     var input_number=['lock_lock_trig_val','lock_lock_trig_time_val','lock_rl_error_threshold','lock_rl_signal_threshold','lock_sf_jumpA', 
-                      'lock_sf_jumpB','lock_error_offset','lock_mod_out1','lock_mod_out2','lock_gen_mod_phase','lock_gen_mod_hp','lock_ramp_step', 
-                      'lock_ramp_low_lim','lock_ramp_hig_lim','lock_ramp_B_factor','lock_pidA_sp','lock_pidA_kp','lock_pidA_ki','lock_pidA_kd', 
-                      'lock_pidB_sp','lock_pidB_kp','lock_pidB_ki','lock_pidB_kd','lock_aux_A','lock_aux_B','lock_stream_port'];
+                      'lock_sf_jumpB','lock_error_offset','lock_mod_out1','lock_mod_out2','lock_gen_mod_phase_A','lock_gen_mod_phase_B', 
+                      'lock_gen_mod_hp','lock_ramp_step','lock_ramp_low_lim','lock_ramp_hig_lim','lock_ramp_B_factor','lock_pidA_sp','lock_pidA_kp', 
+                      'lock_pidA_ki','lock_pidA_kd','lock_pidB_sp','lock_pidB_kp','lock_pidB_ki','lock_pidB_kd','lock_aux_A','lock_aux_B', 
+                      'lock_stream_port'];
 
     for(ii in input_number){
       $('#'+input_number[ii])
@@ -1346,7 +1348,7 @@
         lock_ctrl_update();
         //$(this).blur();
     });
-    $('#lock_gen_mod_phase,#lock_gen_mod_hp').on('input', function() {
+    $('#lock_gen_mod_phase_A,#lock_gen_mod_phase_B,#lock_gen_mod_hp').on('input', function() {
         lock_modulation_update();
         //$(this).blur();
     });
@@ -2028,20 +2030,24 @@
   }
 
   function lock_modulation_update() {
-    lock_gen_mod_phase_arr    = $("#lock_gen_mod_phase"    ).val().trim().split(' ').filter( function(n,i){ return n!=="" } );
+    lock_gen_mod_phase_arr    = $("#lock_gen_mod_phase_A"    ).val().trim().split(' ').filter( function(n,i){ return n!=="" } );
+    lock_gen_mod_phase_arr_b  = $("#lock_gen_mod_phase_B"    ).val().trim().split(' ').filter( function(n,i){ return n!=="" } );
     lock_gen_mod_hp_arr       = $("#lock_gen_mod_hp"       ).val().trim().split(' ').filter( function(n,i){ return n!=="" } );
 
 
     if( !$.isNumeric(lock_gen_mod_phase_arr[0])    ||
+        !$.isNumeric(lock_gen_mod_phase_arr_b[0])   ||
         !$.isNumeric(lock_gen_mod_hp_arr[0])      // ||
         ) return -1 ;
 
     if (params) if (params.local)
     if( parseLocalFloat(lock_gen_mod_phase_arr[0])    == mod_phase     &&
+        parseLocalFloat(lock_gen_mod_phase_arr_b[0])  == mod_phase_b   &&
         parseLocalFloat(lock_gen_mod_hp_arr[0])       == mod_hp     //   &&
         ) return -1 ;
 
     mod_phase    = Math.abs( parseLocalFloat( lock_gen_mod_phase_arr[0] ) );
+    mod_phase_b  = Math.abs( parseLocalFloat( lock_gen_mod_phase_arr_b[0] ) );
     mod_hp       = Math.abs( parseLocalFloat( lock_gen_mod_hp_arr[0]   ) );
 
     if( lock_gen_mod_phase_arr.length === 2) {
@@ -2053,7 +2059,19 @@
         mod_phase = Math.round( mod_phase / 2  * 2520 );
       mod_phase = Math.min(  2520 , mod_phase  ) ;
       mod_phase = Math.max(     0 , mod_phase  ) ;
-      $("#lock_gen_mod_phase").val(""+mod_phase);
+      $("#lock_gen_mod_phase_A").val(""+mod_phase);
+    }
+
+    if( lock_gen_mod_phase_arr_b.length === 2) {
+      if ( lock_gen_mod_phase_arr_b[1].toLowerCase()=="g" || lock_gen_mod_phase_arr_b[1].toLowerCase()=="deg" || lock_gen_mod_phase_arr_b[1].toLowerCase()=="°" )
+        mod_phase_b = Math.round( (mod_phase_b % 360 ) / 360 * 2520 );
+      if ( lock_gen_mod_phase_arr_b[1].toLowerCase()=="rad" )
+        mod_phase_b = Math.round( ( mod_phase_b % (2*Math.PI) ) / (2*Math.PI) * 2520 );
+      if ( lock_gen_mod_phase_arr_b[1].toLowerCase()=="pi" )
+        mod_phase_b = Math.round( mod_phase_b / 2  * 2520 );
+      mod_phase_b = Math.min(  2520 , mod_phase_b  ) ;
+      mod_phase_b = Math.max(     0 , mod_phase_b  ) ;
+      $("#lock_gen_mod_phase_B").val(""+mod_phase_b);
     }
 
     if( lock_gen_mod_hp_arr.length === 2) {
@@ -2069,7 +2087,8 @@
     }
 
 
-    $('#lock_gen_mod_phase_text'   ).html( "<small><b>" + (mod_phase   /2520*360).toFixed(1) + "&nbsp;deg&nbsp;|&nbsp;" +   (mod_phase   /2520*2).toFixed(1) + "&nbsp;п&nbsp;rad</b></small>");
+    $('#lock_gen_mod_phase_A_text'   ).html( "<small><b>" + (mod_phase   /2520*360).toFixed(1) + "&nbsp;deg&nbsp;|&nbsp;" +   (mod_phase   /2520*2).toFixed(1) + "&nbsp;п&nbsp;rad</b></small>");
+    $('#lock_gen_mod_phase_B_text'   ).html( "<small><b>" + (mod_phase_b /2520*360).toFixed(1) + "&nbsp;deg&nbsp;|&nbsp;" +   (mod_phase_b /2520*2).toFixed(1) + "&nbsp;п&nbsp;rad</b></small>");
 
     hp_period=(mod_hp+1)*2520*8e-9;
     if ( hp_period === 0 ){
@@ -2962,7 +2981,8 @@
     $('#lock_error_offset'       ).val(params.original.lock_error_offset          );
     $('#lock_mod_out1'           ).val(params.original.lock_mod_out1              );
     $('#lock_mod_out2'           ).val(params.original.lock_mod_out2              );
-    $('#lock_gen_mod_phase'      ).val(params.original.lock_gen_mod_phase         );
+    $('#lock_gen_mod_phase_A'    ).val(params.original.lock_gen_mod_phase_A       );
+    $('#lock_gen_mod_phase_B'    ).val(params.original.lock_gen_mod_phase_B       );
     $('#lock_gen_mod_hp'         ).val(params.original.lock_gen_mod_hp            );
     $('#lock_ramp_step'          ).val(params.original.lock_ramp_step             );
     $('#lock_ramp_low_lim'       ).val(params.original.lock_ramp_low_lim          );
@@ -4754,19 +4774,36 @@
                     <div class="panel-group col-xs-12 col-sm-12 col-md-12">
                       <form class="form-horizontal" role="form" onsubmit="return false;">
                         <div class="form-group">
-                          <label for="lock_gen_mod_phase" class="col-xs-4 control-label">Phase:</label>
+                          <label for="lock_gen_mod_phase_A" class="col-xs-4 control-label">Phase:</label>
                           <div class="col-xs-4 col-sm-8">
-                            <input type="number" autocomplete="off" class="form-control" value="0" id="lock_gen_mod_phase" step="1" min="0" max="2519">
-                            <span style="display: none;" class="input-group-btn" id="lock_gen_mod_phase_apply">
+                            <input type="number" autocomplete="off" class="form-control" value="0" id="lock_gen_mod_phase_A" step="1" min="0" max="2519">
+                            <span style="display: none;" class="input-group-btn" id="lock_gen_mod_phase_A_apply">
                               <button type="button" class="btn btn-primary btn-lg"><span class="glyphicon glyphicon-ok-circle"></span></button>
                             </span>
                           </div>
                           <div class="col-xs-12 col-sm-12 text-center">
-                            <div style="padding: 7px 0 0;" class="col-xs-8" id="lock_gen_mod_phase_text">lock_gen_mod_phase</div>
+                            <div style="padding: 7px 0 0;" class="col-xs-8" id="lock_gen_mod_phase_A_text">lock_gen_mod_phase_A</div>
                           </div>
                         </div>
                       </form>
                     </div>
+                    <div class="panel-group col-xs-12 col-sm-12 col-md-12">
+                      <form class="form-horizontal" role="form" onsubmit="return false;">
+                        <div class="form-group">
+                          <label for="lock_gen_mod_phase_B" class="col-xs-4 control-label">Phase:</label>
+                          <div class="col-xs-4 col-sm-8">
+                            <input type="number" autocomplete="off" class="form-control" value="0" id="lock_gen_mod_phase_B" step="1" min="0" max="2519">
+                            <span style="display: none;" class="input-group-btn" id="lock_gen_mod_phase_B_apply">
+                              <button type="button" class="btn btn-primary btn-lg"><span class="glyphicon glyphicon-ok-circle"></span></button>
+                            </span>
+                          </div>
+                          <div class="col-xs-12 col-sm-12 text-center">
+                            <div style="padding: 7px 0 0;" class="col-xs-8" id="lock_gen_mod_phase_B_text">lock_gen_mod_phase_B</div>
+                          </div>
+                        </div>
+                      </form>
+                    </div>
+
                   </div>
                   <div class="row" style="background-color: #F2F2F2;">
                     <div class="panel-group col-xs-12 col-sm-12 col-md-12">

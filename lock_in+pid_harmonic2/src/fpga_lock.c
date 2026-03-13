@@ -113,7 +113,8 @@ void reset_locks(void)
         g_lock_reg->error_std            =      0;
         g_lock_reg->mod_out1             =     -1;
         g_lock_reg->mod_out2             =     -1;
-        g_lock_reg->gen_mod_phase        =      0;
+        g_lock_reg->gen_mod_phase_A      =      0;
+        g_lock_reg->gen_mod_phase_B      =      0;
         g_lock_reg->gen_mod_hp           =      0;
         g_lock_reg->ramp_A               =      0;
         g_lock_reg->ramp_B               =      0;

@@ -354,7 +354,8 @@ static rp_app_params_t rp_main_params[PARAMS_NUM+1] = {
     { "lock_error_std"                ,      0, 0, 1,  -0x80000000,   0x7fffffff }, /** 1 sec error square sum val **/
     { "lock_mod_out1"                 ,     -1, 1, 0,           -1,         8191 }, /** Modulation amplitud for out1 **/
     { "lock_mod_out2"                 ,     -1, 1, 0,           -1,         8191 }, /** Modulation amplitud for out2 **/
-    { "lock_gen_mod_phase"            ,      0, 1, 0,            0,         2519 }, /** phase relation of cos_?f signals **/
+    { "lock_gen_mod_phase_A"          ,      0, 1, 0,            0,         2519 }, /** phase relation of cos_?f signals **/
+    { "lock_gen_mod_phase_B"          ,      0, 1, 0,            0,         2519 }, /** phase relation of cos_?f signals **/
     { "lock_gen_mod_hp"               ,      0, 1, 0,            0,        16383 }, /** harmonic period set **/
     { "lock_ramp_A"                   ,      0, 0, 1,        -8192,         8191 }, /** ramp signal A **/
     { "lock_ramp_B"                   ,      0, 0, 1,        -8192,         8191 }, /** ramp signal B **/
@@ -815,6 +816,7 @@ int rp_set_params(rp_app_params_t *p, int len)
             }
             j++;
         }
+        TRACE("LOLO(rp_set_params): while END\n");
 
         if(p_idx == -1) {
             fprintf(stderr, "Parameter %s not found, ignoring it\n", p[i].name);
@@ -847,6 +849,7 @@ int rp_set_params(rp_app_params_t *p, int len)
         }
         rp_main_params[p_idx].value = p[i].value;
     }
+    TRACE("LOLO(rp_set_params): FOR END\n");
     transform_from_iface_units(&rp_main_params[0]);
     pthread_mutex_unlock(&rp_main_params_mutex);
 
@@ -1034,6 +1037,8 @@ int rp_set_params(rp_app_params_t *p, int len)
         }
     }
 
+    TRACE("LOLO(rp_set_params): FPGA END\n");
+
     if(awg_params_change) {
 
         /* Correct frequencies if needed */
@@ -1048,6 +1053,8 @@ int rp_set_params(rp_app_params_t *p, int len)
         }
     }
 
+    TRACE("LOLO(rp_set_params): AWG END\n");
+
     if (pid_params_change) {
         if(pid_update(&rp_main_params[0]) < 0) {
             return -1;
@@ -1060,6 +1067,7 @@ int rp_set_params(rp_app_params_t *p, int len)
         }
     }
 
+    TRACE("LOLO(rp_set_params): END END\n");
     return 0;
 }
 

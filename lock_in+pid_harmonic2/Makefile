@@ -57,7 +57,7 @@ fpga.bit.bin:
 
 target/$(APP): red_pitaya.bit $(CONTROLLERHF) index.html
 	mkdir -p target/$(APP)
-	cp -r $(CONTROLLERHF) c nginx.conf fpga.conf info css js py red_pitaya.bit index.html target/$(APP)
+	cp -r $(CONTROLLERHF) c nginx.conf fpga.* info css js py red_pitaya.bit index.html target/$(APP)
 	cp -r upload_app.sh target/
 	cp -r ../resources target/
 	cp ../CHANGELOG.md ../README.md target/
@@ -99,12 +99,12 @@ clean: clean_app clean_fpga clean_target
 
 
 upload_bit:
-	ssh $(RPIP) $(RPOPTS) "PATH_REDPITAYA=/opt/redpitaya /boot/sbin/rw ; rm /opt/redpitaya/www/apps/$(APP)/red_pitaya.bit"
+	ssh $(RPIP) $(RPOPTS) "PATH_REDPITAYA=/opt/redpitaya /boot/sbin/rw ; rm /opt/redpitaya/www/apps/$(APP)/red_pitaya.bit; rm /opt/redpitaya/www/apps/$(APP)/fpga.*"
 	scp $(RPSCP) red_pitaya.bit  root@$(RPIP):/opt/redpitaya/www/apps/$(APP)/
 
 upload: target/$(APP)
 	ssh $(RPIP) $(RPOPTS) "PATH_REDPITAYA=/opt/redpitaya /boot/sbin/rw ; rm -rf /opt/redpitaya/www/apps/$(APP) ; mkdir -p /opt/redpitaya/www/apps/$(APP)"
-	cd target/$(APP) ; scp  $(RPSCP) -r controllerhf.so css js py c nginx.conf fpga.conf index.html info red_pitaya.bit  root@$(RPIP):/opt/redpitaya/www/apps/$(APP)/
+	cd target/$(APP) ; scp  $(RPSCP) -r controllerhf.so css js py c nginx.conf fpga.* index.html info red_pitaya.bit  root@$(RPIP):/opt/redpitaya/www/apps/$(APP)/
 
 upload_html: target/$(APP)
 	ssh $(RPIP) $(RPOPTS) "PATH_REDPITAYA=/opt/redpitaya /boot/sbin/rw ; rm -rf /opt/redpitaya/www/apps/$(APP)/{index.html,js,css}"

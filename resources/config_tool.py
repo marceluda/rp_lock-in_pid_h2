@@ -213,7 +213,8 @@ f.add( name="mod_out2"         , group=grp , val=   -1, rw=True ,  nbits=14, min
 
 # Modulation Generator
 grp='gen_mod'
-f.add( name="gen_mod_phase"      , group=grp , val=    0, rw=True ,  nbits=12, min_val=          0, max_val=       2519, fpga_update=True , signed=False, desc="phase relation of cos_?f signals" )
+f.add( name="gen_mod_phase_A"      , group=grp , val=    0, rw=True ,  nbits=12, min_val=          0, max_val=       2519, fpga_update=True , signed=False, desc="phase relation of cos_?f signals" )
+f.add( name="gen_mod_phase_B"      , group=grp , val=    0, rw=True ,  nbits=12, min_val=          0, max_val=       2519, fpga_update=True , signed=False, desc="phase relation of cos_?f signals" )
 f.add( name="gen_mod_hp"         , group=grp , val=    0, rw=True ,  nbits=14, min_val=          0, max_val=      16383, fpga_update=True , signed=False, desc="harmonic period set" )
 
 # Ramp control
@@ -799,7 +800,8 @@ m.add( name="lock_mod_out1"           , fpga_reg="mod_out1"           , val=-1  
 m.add( name="lock_mod_out2"           , fpga_reg="mod_out2"           , val=-1   , rw=True , nbits=14, min_val=-1      , max_val=8191      , fpga_update=True , signed=True , group="lock-in"        , desc="Modulation amplitud for out2")
 
 # group: gen_mod
-m.add( name="lock_gen_mod_phase" , fpga_reg="gen_mod_phase" , val=0    , rw=True , nbits=12, min_val=0         , max_val=2519      , fpga_update=True , signed=False, group="gen_mod"        , desc="phase relation of cos_?f signals")
+m.add( name="lock_gen_mod_phase_A" , fpga_reg="gen_mod_phase_A" , val=0    , rw=True , nbits=12, min_val=0         , max_val=2519      , fpga_update=True , signed=False, group="gen_mod"        , desc="phase relation of cos_?f signals")
+m.add( name="lock_gen_mod_phase_B" , fpga_reg="gen_mod_phase_B" , val=0    , rw=True , nbits=12, min_val=0         , max_val=2519      , fpga_update=True , signed=False, group="gen_mod"        , desc="phase relation of cos_?f signals")
 m.add( name="lock_gen_mod_hp"    , fpga_reg="gen_mod_hp"    , val=0    , rw=True , nbits=14, min_val=0         , max_val=16383     , fpga_update=True , signed=False, group="gen_mod"        , desc="harmonic period set")
 
 # group: gen_ramp
@@ -1400,7 +1402,9 @@ h['lock_mod_out2'                 ].type = 'number'
 
 
 
-h['lock_gen_mod_phase'            ].type = 'number'
+h['lock_gen_mod_phase_A'            ].type = 'number'
+h['lock_gen_mod_phase_B'            ].type = 'number'
+
 
 h['lock_gen_mod_hp'               ].type = 'number'
 
