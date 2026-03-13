@@ -118,7 +118,8 @@ module gen_mod_h2
             cnt           <=   10'b0    ;
             quad_bit      <=    2'b0    ;
             cntu          <=   12'b0    ;
-            phase_tick_A       <=   12'd2519 ;
+            phase_tick_A  <=   12'd2519 ;
+            phase_tick_B  <=   12'd2519 ;
             //cnt_next_zero <=    1'b0;
         end
         else
@@ -130,6 +131,10 @@ module gen_mod_h2
                 phase_tick_A  <= 12'd2519 ;
             else
                 phase_tick_A  <= phase_A[12-1:0] - 12'b1 ;
+            if(phase_B==12'b0)
+                phase_tick_B  <= 12'd2519 ;
+            else
+                phase_tick_B  <= phase_B[12-1:0] - 12'b1 ;
         end
 
     assign quad_add       = (cnt==10'd629 & quad_bit==2'b00 ) |

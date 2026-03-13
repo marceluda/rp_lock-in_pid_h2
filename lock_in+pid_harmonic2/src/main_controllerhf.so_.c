@@ -816,7 +816,6 @@ int rp_set_params(rp_app_params_t *p, int len)
             }
             j++;
         }
-        TRACE("LOLO(rp_set_params): while END\n");
 
         if(p_idx == -1) {
             fprintf(stderr, "Parameter %s not found, ignoring it\n", p[i].name);
@@ -849,7 +848,6 @@ int rp_set_params(rp_app_params_t *p, int len)
         }
         rp_main_params[p_idx].value = p[i].value;
     }
-    TRACE("LOLO(rp_set_params): FOR END\n");
     transform_from_iface_units(&rp_main_params[0]);
     pthread_mutex_unlock(&rp_main_params_mutex);
 
@@ -1037,8 +1035,6 @@ int rp_set_params(rp_app_params_t *p, int len)
         }
     }
 
-    TRACE("LOLO(rp_set_params): FPGA END\n");
-
     if(awg_params_change) {
 
         /* Correct frequencies if needed */
@@ -1053,8 +1049,6 @@ int rp_set_params(rp_app_params_t *p, int len)
         }
     }
 
-    TRACE("LOLO(rp_set_params): AWG END\n");
-
     if (pid_params_change) {
         if(pid_update(&rp_main_params[0]) < 0) {
             return -1;
@@ -1067,7 +1061,6 @@ int rp_set_params(rp_app_params_t *p, int len)
         }
     }
 
-    TRACE("LOLO(rp_set_params): END END\n");
     return 0;
 }
 
