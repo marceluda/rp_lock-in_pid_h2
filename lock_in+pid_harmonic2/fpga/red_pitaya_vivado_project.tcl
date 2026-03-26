@@ -89,6 +89,7 @@ add_files                      $path_rtl/lock/jump_control.v
 add_files                      $path_rtl/lock/sum_2N2.v
 add_files                      $path_rtl/lock/pipe_mult.v
 add_files                      $path_rtl/lock/debounce.v
+add_files                      $path_rtl/lock/demodulation_line.v
 
 
 add_files -fileset constrs_1      $path_sdc/red_pitaya.xdc

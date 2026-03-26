@@ -108,6 +108,7 @@ read_verilog                      $path_rtl/lock/jump_control.v
 #read_verilog                      $path_rtl/lock/sum_2N.v
 read_verilog                      $path_rtl/lock/sum_2N2.v
 read_verilog                      $path_rtl/lock/pipe_mult.v
+read_verilog                      $path_rtl/lock/demodulation_line.v
 
 
 

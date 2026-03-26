@@ -737,60 +737,92 @@ module lock(
     assign     lpf_F3_B   =   { ~(^lpf_F3[5:4]), ~(^lpf_F3[5:4]), lpf_F3[4-1:0]} ;
 
 
+    demodulation_line #(.R(14), .RT(5)) i_demodulation_line_cos_A (
+        .clk(clk), .rst(rst),
+        // input
+        .in(signal_i),
+        .ref(cos_A), 
+
+        // config
+        .tau1(lpf_X_A), 
+        .tau2(lpf_X_B),
+        .amp(sg_amp0),
+
+        // output
+        .out(X_28),
+        .out_amp(Xo)
+    );
+
+    demodulation_line #(.R(14), .RT(5)) i_demodulation_line_sin_A (
+        .clk(clk), .rst(rst),
+        // input
+        .in(signal_i),
+        .ref(sin_A), 
+
+        // config
+        .tau1(lpf_X_A), 
+        .tau2(lpf_X_B),
+        .amp(sg_amp0),
+
+        // output
+        .out(Y_28),
+        .out_amp(Yo)
+    );
+
 
 
     // signal_i multiplied by reference signal
 
-    wire signed [28-1:0] sin_ref_mult_tmp_28, cos_ref_mult_tmp_28; // this is for amplitud enhancement
+    // wire signed [28-1:0] sin_ref_mult_tmp_28, cos_ref_mult_tmp_28; // this is for amplitud enhancement
 
-    mult_dsp_14  i_mult_dps_sin_ref (.CLK(clk), .A($signed(sin_ref)) , .B(signal_i), .P(sin_ref_mult_tmp_28));
-    mult_dsp_14  i_mult_dps_cos_ref (.CLK(clk), .A($signed(cos_ref)) , .B(signal_i), .P(cos_ref_mult_tmp_28));
-    mult_dsp_14  i_mult_dps_cos_1f  (.CLK(clk), .A($signed(cos_1f )) , .B(signal_i), .P(cos_1f_mult ));
-    mult_dsp_14  i_mult_dps_cos_2f  (.CLK(clk), .A($signed(cos_2f )) , .B(signal_i), .P(cos_2f_mult ));
-    mult_dsp_14  i_mult_dps_cos_3f  (.CLK(clk), .A($signed(cos_3f )) , .B(signal_i), .P(cos_3f_mult ));
+    // mult_dsp_14  i_mult_dps_sin_ref (.CLK(clk), .A($signed(sin_ref)) , .B(signal_i), .P(sin_ref_mult_tmp_28));
+    // mult_dsp_14  i_mult_dps_cos_ref (.CLK(clk), .A($signed(cos_ref)) , .B(signal_i), .P(cos_ref_mult_tmp_28));
+    // mult_dsp_14  i_mult_dps_cos_1f  (.CLK(clk), .A($signed(cos_1f )) , .B(signal_i), .P(cos_1f_mult ));
+    // mult_dsp_14  i_mult_dps_cos_2f  (.CLK(clk), .A($signed(cos_2f )) , .B(signal_i), .P(cos_2f_mult ));
+    // mult_dsp_14  i_mult_dps_cos_3f  (.CLK(clk), .A($signed(cos_3f )) , .B(signal_i), .P(cos_3f_mult ));
 
-    assign sin_ref_mult = sin_ref_mult_tmp_28 <<< 4'd10 ; // this is for amplitud enhancement
-    assign cos_ref_mult = cos_ref_mult_tmp_28 <<< 4'd10 ;
+    // assign sin_ref_mult = sin_ref_mult_tmp_28 <<< 4'd10 ; // this is for amplitud enhancement
+    // assign cos_ref_mult = cos_ref_mult_tmp_28 <<< 4'd10 ;
 
-    // multiplied signal " "_mult goes in LPF_?_A
-    LP_filter3 #(.R(38)) i_LP_filter_sin_ref_A (.clk(clk), .rst(rst), .tau( lpf_X_A   ), .in( sin_ref_mult ), .out( sin_ref_lpf1 ) );
-    LP_filter3 #(.R(38)) i_LP_filter_cos_ref_A (.clk(clk), .rst(rst), .tau( lpf_Y_A   ), .in( cos_ref_mult ), .out( cos_ref_lpf1 ) );
-    LP_filter3 #(.R(28)) i_LP_filter_cos_1f_A  (.clk(clk), .rst(rst), .tau( lpf_F1_A  ), .in( cos_1f_mult  ), .out( cos_1f_lpf1  ) );
-    LP_filter3 #(.R(28)) i_LP_filter_cos_2f_A  (.clk(clk), .rst(rst), .tau( lpf_F2_A  ), .in( cos_2f_mult  ), .out( cos_2f_lpf1  ) );
-    LP_filter3 #(.R(28)) i_LP_filter_cos_3f_A  (.clk(clk), .rst(rst), .tau( lpf_F3_A  ), .in( cos_3f_mult  ), .out( cos_3f_lpf1  ) );
-
-
-    // LPF_A goes into LPF_?_B
-    LP_filter3 #(.R(38)) i_LP_filter_sin_ref_B (.clk(clk), .rst(rst), .tau( lpf_X_B   ), .in( sin_ref_lpf1 ), .out( sin_ref_lpf2 ) );
-    LP_filter3 #(.R(38)) i_LP_filter_cos_ref_B (.clk(clk), .rst(rst), .tau( lpf_Y_B   ), .in( cos_ref_lpf1 ), .out( cos_ref_lpf2 ) );
-    LP_filter3 #(.R(28)) i_LP_filter_cos_1f_B  (.clk(clk), .rst(rst), .tau( lpf_F1_B  ), .in( cos_1f_lpf1  ), .out( cos_1f_lpf2  ) );
-    LP_filter3 #(.R(28)) i_LP_filter_cos_2f_B  (.clk(clk), .rst(rst), .tau( lpf_F2_B  ), .in( cos_2f_lpf1  ), .out( cos_2f_lpf2  ) );
-    LP_filter3 #(.R(28)) i_LP_filter_cos_3f_B  (.clk(clk), .rst(rst), .tau( lpf_F3_B  ), .in( cos_3f_lpf1  ), .out( cos_3f_lpf2  ) );
+    // // multiplied signal " "_mult goes in LPF_?_A
+    // LP_filter3 #(.R(38)) i_LP_filter_sin_ref_A (.clk(clk), .rst(rst), .tau( lpf_X_A   ), .in( sin_ref_mult ), .out( sin_ref_lpf1 ) );
+    // LP_filter3 #(.R(38)) i_LP_filter_cos_ref_A (.clk(clk), .rst(rst), .tau( lpf_Y_A   ), .in( cos_ref_mult ), .out( cos_ref_lpf1 ) );
+    // LP_filter3 #(.R(28)) i_LP_filter_cos_1f_A  (.clk(clk), .rst(rst), .tau( lpf_F1_A  ), .in( cos_1f_mult  ), .out( cos_1f_lpf1  ) );
+    // LP_filter3 #(.R(28)) i_LP_filter_cos_2f_A  (.clk(clk), .rst(rst), .tau( lpf_F2_A  ), .in( cos_2f_mult  ), .out( cos_2f_lpf1  ) );
+    // LP_filter3 #(.R(28)) i_LP_filter_cos_3f_A  (.clk(clk), .rst(rst), .tau( lpf_F3_A  ), .in( cos_3f_mult  ), .out( cos_3f_lpf1  ) );
 
 
-    //wire signed [37-1:0] Xo_37,Yo_37,F1o_37,F2o_37,F3o_37;
-    // wire signed [47-1:0] Xo_47,Yo_47;
-    wire signed [53-1:0] Xo_53,Yo_53;
-    //wire signed [37-1:0] F1o_37,F2o_37,F3o_37;
-    wire signed [43-1:0] F1o_43,F2o_43,F3o_43;
-
-    //wire signed [28-1:0] Xo_28,Yo_28,F1o_28,F2o_28,F3o_28;
-    wire signed [38-1:0] Xo_38,Yo_38;
-    wire signed [28-1:0] F1o_28,F2o_28,F3o_28;
-
-    assign X_28   = cos_ref_lpf2 >>> 4'd10 ;
-    assign Y_28   = sin_ref_lpf2 >>> 4'd10 ;
-    assign F1_28  = cos_1f_lpf2  ;
-    assign F2_28  = cos_2f_lpf2  ;
-    assign F3_28  = cos_3f_lpf2  ;
+    // // LPF_A goes into LPF_?_B
+    // LP_filter3 #(.R(38)) i_LP_filter_sin_ref_B (.clk(clk), .rst(rst), .tau( lpf_X_B   ), .in( sin_ref_lpf1 ), .out( sin_ref_lpf2 ) );
+    // LP_filter3 #(.R(38)) i_LP_filter_cos_ref_B (.clk(clk), .rst(rst), .tau( lpf_Y_B   ), .in( cos_ref_lpf1 ), .out( cos_ref_lpf2 ) );
+    // LP_filter3 #(.R(28)) i_LP_filter_cos_1f_B  (.clk(clk), .rst(rst), .tau( lpf_F1_B  ), .in( cos_1f_lpf1  ), .out( cos_1f_lpf2  ) );
+    // LP_filter3 #(.R(28)) i_LP_filter_cos_2f_B  (.clk(clk), .rst(rst), .tau( lpf_F2_B  ), .in( cos_2f_lpf1  ), .out( cos_2f_lpf2  ) );
+    // LP_filter3 #(.R(28)) i_LP_filter_cos_3f_B  (.clk(clk), .rst(rst), .tau( lpf_F3_B  ), .in( cos_3f_lpf1  ), .out( cos_3f_lpf2  ) );
 
 
+    // //wire signed [37-1:0] Xo_37,Yo_37,F1o_37,F2o_37,F3o_37;
+    // // wire signed [47-1:0] Xo_47,Yo_47;
+    // wire signed [53-1:0] Xo_53,Yo_53;
+    // //wire signed [37-1:0] F1o_37,F2o_37,F3o_37;
+    // wire signed [43-1:0] F1o_43,F2o_43,F3o_43;
 
-    assign Xo_53    = ( cos_ref_lpf2   <<< sg_amp0  );
-    assign Yo_53    = ( sin_ref_lpf2   <<< sg_amp0  );
-    assign F1o_43   = ( F1_28  <<< sg_amp1  );
-    assign F2o_43   = ( F2_28  <<< sg_amp2  );
-    assign F3o_43   = ( F3_28  <<< sg_amp3  );
+    // //wire signed [28-1:0] Xo_28,Yo_28,F1o_28,F2o_28,F3o_28;
+    // wire signed [38-1:0] Xo_38,Yo_38;
+    // wire signed [28-1:0] F1o_28,F2o_28,F3o_28;
+
+    // assign X_28   = cos_ref_lpf2 >>> 4'd10 ;
+    // assign Y_28   = sin_ref_lpf2 >>> 4'd10 ;
+    // assign F1_28  = cos_1f_lpf2  ;
+    // assign F2_28  = cos_2f_lpf2  ;
+    // assign F3_28  = cos_3f_lpf2  ;
+
+
+
+    // assign Xo_53    = ( cos_ref_lpf2   <<< sg_amp0  );
+    // assign Yo_53    = ( sin_ref_lpf2   <<< sg_amp0  );
+    // assign F1o_43   = ( F1_28  <<< sg_amp1  );
+    // assign F2o_43   = ( F2_28  <<< sg_amp2  );
+    // assign F3o_43   = ( F3_28  <<< sg_amp3  );
 
 
 
@@ -802,11 +834,11 @@ module lock(
     // satprotect #(.Ri(37),.Ro(28),.SAT(28)) i_satprotect_F3o_37  ( .in( F3o_37 ), .out( F3o_28 ) );
 
 
-    satprotect2 #(.Ri(53),.Ro(38)) i_satprotect_Xo_53   ( .in( Xo_53  ), .out( Xo_38  ) );
-    satprotect2 #(.Ri(53),.Ro(38)) i_satprotect_Yo_53   ( .in( Yo_53  ), .out( Yo_38  ) );
-    satprotect2 #(.Ri(43),.Ro(28)) i_satprotect_F1o_43  ( .in( F1o_43 ), .out( F1o_28 ) );
-    satprotect2 #(.Ri(43),.Ro(28)) i_satprotect_F2o_43  ( .in( F2o_43 ), .out( F2o_28 ) );
-    satprotect2 #(.Ri(43),.Ro(28)) i_satprotect_F3o_43  ( .in( F3o_43 ), .out( F3o_28 ) );
+    // satprotect2 #(.Ri(53),.Ro(38)) i_satprotect_Xo_53   ( .in( Xo_53  ), .out( Xo_38  ) );
+    // satprotect2 #(.Ri(53),.Ro(38)) i_satprotect_Yo_53   ( .in( Yo_53  ), .out( Yo_38  ) );
+    // satprotect2 #(.Ri(43),.Ro(28)) i_satprotect_F1o_43  ( .in( F1o_43 ), .out( F1o_28 ) );
+    // satprotect2 #(.Ri(43),.Ro(28)) i_satprotect_F2o_43  ( .in( F2o_43 ), .out( F2o_28 ) );
+    // satprotect2 #(.Ri(43),.Ro(28)) i_satprotect_F3o_43  ( .in( F3o_43 ), .out( F3o_28 ) );
 
 
 
@@ -840,9 +872,9 @@ module lock(
             else begin
                 X_28_reg     <=  X_28;
                 Y_28_reg     <=  Y_28;
-                F1_28_reg    <=  F1_28;
-                F2_28_reg    <=  F2_28;
-                F3_28_reg    <=  F3_28;
+                F1_28_reg    <=  28'b0; // LOLO ERASE
+                F2_28_reg    <=  28'b0; // LOLO ERASE
+                F3_28_reg    <=  28'b0; // LOLO ERASE
                 signal_i_reg <=  signal_i;
                 error_reg    <=  error;
                 ctrl_A_reg   <=  ctrl_A;
@@ -872,13 +904,16 @@ module lock(
     //
 
 
-    satprotect2 #(.Ri(17),.Ro(14)) i_satprotect_Xo    ( .in(  Xo_38[  38-1:21] ),    .out( Xo    ) );
-    satprotect2 #(.Ri(17),.Ro(14)) i_satprotect_Yo    ( .in(  Yo_38[  38-1:21] ),    .out( Yo    ) );
-    satprotect2 #(.Ri(17),.Ro(14)) i_satprotect_F1o   ( .in( F1o_28[  28-1:11] ),    .out( F1o   ) );
-    satprotect2 #(.Ri(17),.Ro(14)) i_satprotect_F2o   ( .in( F2o_28[  28-1:11] ),    .out( F2o   ) );
-    satprotect2 #(.Ri(17),.Ro(14)) i_satprotect_F3o   ( .in( F3o_28[  28-1:11] ),    .out( F3o   ) );
+    // satprotect2 #(.Ri(17),.Ro(14)) i_satprotect_Xo    ( .in(  Xo_38[  38-1:21] ),    .out( Xo    ) );
+    // satprotect2 #(.Ri(17),.Ro(14)) i_satprotect_Yo    ( .in(  Yo_38[  38-1:21] ),    .out( Yo    ) );
+    // satprotect2 #(.Ri(17),.Ro(14)) i_satprotect_F1o   ( .in( F1o_28[  28-1:11] ),    .out( F1o   ) );
+    // satprotect2 #(.Ri(17),.Ro(14)) i_satprotect_F2o   ( .in( F2o_28[  28-1:11] ),    .out( F2o   ) );
+    // satprotect2 #(.Ri(17),.Ro(14)) i_satprotect_F3o   ( .in( F3o_28[  28-1:11] ),    .out( F3o   ) );
 
-
+    // LOLO ERASE
+    assign F1o = 14'b0 ;
+    assign F2o = 14'b0 ;
+    assign F3o = 14'b0 ;
 
     /* end Signal Processing  *****************************************/
 
