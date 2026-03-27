@@ -25,8 +25,8 @@ module demodulation_line #(parameter R=14, RT=5, BIT_ENHANCE=10)
     input clk,rst,
     input         [ RT -1:0] tau1,tau2,amp,
     input  signed [ R  -1:0] in,ref,
-    output signed [ R*2-1:0] out,
-    output signed [ R  -1:0] out_amp
+    output signed [R*2+BIT_ENHANCE   -1:0] out_hr,
+    output signed [ R  -1:0] out
     );
     
     // R resolution of input and output signals
@@ -77,6 +77,8 @@ module demodulation_line #(parameter R=14, RT=5, BIT_ENHANCE=10)
       .out( out    ) 
    );
 
+   assign out_hr = out_double;
+   
 endmodule
 
 

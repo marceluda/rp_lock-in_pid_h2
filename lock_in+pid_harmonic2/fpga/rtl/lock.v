@@ -766,7 +766,7 @@ module lock(
 
         // output
         .out(Xo),
-        .out_amp(X_28)
+        .out_hr(X_28)
     );
 
     demodulation_line #(.R(14), .RT(5)) i_demodulation_line_sin_A (
@@ -782,7 +782,7 @@ module lock(
 
         // output
         .out(Yo),
-        .out_amp(Y_28)
+        .out_hr(Y_28)
     );
 
     demodulation_line #(.R(14), .RT(5)) i_demodulation_line_cos_B (
@@ -798,7 +798,7 @@ module lock(
 
         // output
         .out(X2o),
-        .out_amp(X2_28)
+        .out_hr(X2_28)
     );
 
     demodulation_line #(.R(14), .RT(5)) i_demodulation_line_sin_B (
@@ -814,7 +814,7 @@ module lock(
 
         // output
         .out(Y2o),
-        .out_amp(Y2_28)
+        .out_hr(Y2_28)
     );
 
 
