@@ -1622,9 +1622,10 @@
         $(".nav-tabs li").removeClass("active");
         $(this).addClass("active");
         //$('#slow_lock_in_hide div.row[id!="tab_header"]').hide();
-        $('#tab_F0_body,#tab_F1_body,#tab_F2_body,#tab_F3_body').hide();
+        $('#tab_F0_body,#tab_F1_body').hide();
         var tab_name = $(this).text().slice(-2) ;
-        if(tab_name==' Y') tab_name='F0';
+        if(tab_name==' A') tab_name='F0';
+        if(tab_name==' B') tab_name='F1';
         //console.log(tab_name);
         $('#tab_'+tab_name+'_body').show();
 
@@ -1798,8 +1799,12 @@
 
   function lpf_update(){
 
-    var lpfs={0:'lock_lpf_F0_tau'   , 1:'lock_lpf_F1_tau'  , 2:'lock_lpf_F2_tau'  , 3:'lock_lpf_F3_tau',
-              4:'lock_lpf_F0_order' , 5:'lock_lpf_F1_order', 6:'lock_lpf_F2_order', 7:'lock_lpf_F3_order'   };
+    // var lpfs={0:'lock_lpf_F0_tau'   , 1:'lock_lpf_F1_tau'  , 2:'lock_lpf_F2_tau'  , 3:'lock_lpf_F3_tau',
+    //           4:'lock_lpf_F0_order' , 5:'lock_lpf_F1_order', 6:'lock_lpf_F2_order', 7:'lock_lpf_F3_order'   };
+    
+    var lpfs={0:'lock_lpf_F0_tau'   , 1:'lock_lpf_F1_tau'  ,
+              2:'lock_lpf_F0_order' , 3:'lock_lpf_F1_order'  };
+              
 
     if (params.local){
         for ( i in lpfs){
@@ -2233,7 +2238,6 @@
     var set_raw  =  $('#lock_osc_raw_mode').data('checked');
 
     var disp_slow = $('#slow_lock_in_display').hasClass('in') ;
-    var disp_fast = $('#fast_lock_in_display').hasClass('in') ;
     var disp_stream = $('#streaming-module').hasClass('in') ;
 
     if(disp_stream){
@@ -2249,11 +2253,16 @@
     if(disp_slow){
       var X = params.local.lock_X  *scl ;
       var Y = params.local.lock_Y  *scl ;
-      var F1= params.local.lock_F1 *scl ;
-      var F2= params.local.lock_F2 *scl ;
-      var F3= params.local.lock_F3 *scl ;
+
       var R = Math.sqrt( Math.pow(X,2)+Math.pow(Y,2)) ;
       var Fi= Math.atan2(Y,X)*180/Math.PI ;
+
+      var X2 = params.local.lock_X2  *scl ;
+      var Y2 = params.local.lock_Y2  *scl ;
+
+      var R2 = Math.sqrt( Math.pow(X2,2)+Math.pow(Y2,2)) ;
+      var Fi2= Math.atan2(Y2,X2)*180/Math.PI ;
+
 
       if(set_raw){
         fixn=3;
@@ -2261,31 +2270,33 @@
         $('#disp_y' ).html(  Y.toFixed(fixn) );
         $('#disp_r' ).html(  R.toFixed(fixn) );
         $('#disp_fi').html(  Fi.toFixed(2+fixn));
-        $('#disp_F1').html(  F1.toFixed(fixn));
-        $('#disp_F2').html(  F2.toFixed(fixn));
-        $('#disp_F3').html(  F3.toFixed(fixn));
+
+        $('#disp_x2' ).html(  X2.toFixed(fixn) );
+        $('#disp_y2' ).html(  Y2.toFixed(fixn) );
+        $('#disp_r2' ).html(  R2.toFixed(fixn) );
+        $('#disp_fi2').html(  Fi2.toFixed(2+fixn));
       }else{
         var fv0 = Math.max( params.local.lock_X.toString().length , params.local.lock_Y.toString().length )  ;
-        var fv1 = params.local.lock_F1.toString().length ;
-        var fv2 = params.local.lock_F2.toString().length ;
-        var fv3 = params.local.lock_F3.toString().length ;
+        var fv1 = Math.max( params.local.lock_X2.toString().length , params.local.lock_Y2.toString().length )  ;
 
         $('#disp_x' ).html( format_oom(X ,'V',fv0) );
-        $('#disp_y' ).html( format_oom(Y ,'V',fv0));
-        $('#disp_r' ).html( format_oom(R ,'V',fv0));
-        $('#disp_fi').html( format_oom(Fi,'deg'));
-        $('#disp_F1').html( format_oom(F1,'V',fv1));
-        $('#disp_F2').html( format_oom(F2,'V',fv2));
-        $('#disp_F3').html( format_oom(F3,'V',fv3));
+        $('#disp_y' ).html( format_oom(Y ,'V',fv0) );
+        $('#disp_r' ).html( format_oom(R ,'V',fv0) );
+        $('#disp_fi').html( format_oom(Fi,'deg')   );
+
+        $('#disp_x2' ).html( format_oom(X2 ,'V',fv1) );
+        $('#disp_y2' ).html( format_oom(Y2 ,'V',fv1) );
+        $('#disp_r2' ).html( format_oom(R2 ,'V',fv1) );
+        $('#disp_fi2').html( format_oom(Fi2,'deg')   );
       }
 
       if ( (new Date().getTime()) > lasttsp+300 ) {
         lasttsp=Math.floor((new Date().getTime())/1000);
         set_bar( 'disp_x' , params.local.lock_X);
         set_bar( 'disp_y' , params.local.lock_Y);
-        set_bar( 'disp_F1', params.local.lock_F1);
-        set_bar( 'disp_F2', params.local.lock_F2);
-        set_bar( 'disp_F3', params.local.lock_F3);
+
+        set_bar( 'disp_x2' , params.local.lock_X2);
+        set_bar( 'disp_y2' , params.local.lock_Y2);
       }
     }
 
@@ -2303,9 +2314,6 @@
         $('label[for="disp_y"]' ).html("Y [int]");
         $('label[for="disp_r"]' ).html("R [int]");
         $('label[for="disp_fi"]').html("ϕ [deg]");
-        $('label[for="disp_F1"]').html("F1 [int]");
-        $('label[for="disp_F2"]').html("F2 [int]");
-        $('label[for="disp_F3"]').html("F3 [int]");
       }
     } else {
       if (last_disp_units) {
@@ -2313,9 +2321,6 @@
         $('label[for="disp_y"]' ).html("Y");
         $('label[for="disp_r"]' ).html("R");
         $('label[for="disp_fi"]').html("ϕ");
-        $('label[for="disp_F1"]').html("F1");
-        $('label[for="disp_F2"]').html("F2");
-        $('label[for="disp_F3"]').html("F3");
       }
     }
     $('#disp_error_mean' ).html( error_mean );
@@ -2819,7 +2824,8 @@
 
     if ( $.inArray( param_name, [ 'lock_pidA_PSR', 'lock_pidA_ISR', 'lock_pidA_DSR', 'lock_pidA_SAT' ] )>-1 ) lock_pidA_update() ;
     if ( $.inArray( param_name, [ 'lock_pidB_PSR', 'lock_pidB_ISR', 'lock_pidB_DSR', 'lock_pidB_SAT' ] )>-1 ) lock_pidB_update() ;
-    if ( $.inArray( param_name, [ 'lock_lpf_F0_tau', 'lock_lpf_F0_order', 'lock_lpf_F1_tau', 'lock_lpf_F1_order', 'lock_lpf_F2_tau', 'lock_lpf_F2_order', 'lock_lpf_F3_tau', 'lock_lpf_F3_order' ] )>-1 ) lpf_update();
+    // if ( $.inArray( param_name, [ 'lock_lpf_F0_tau', 'lock_lpf_F0_order', 'lock_lpf_F1_tau', 'lock_lpf_F1_order', 'lock_lpf_F2_tau', 'lock_lpf_F2_order', 'lock_lpf_F3_tau', 'lock_lpf_F3_order' ] )>-1 ) lpf_update();
+    if ( $.inArray( param_name, [ 'lock_lpf_F0_tau', 'lock_lpf_F0_order', 'lock_lpf_F1_tau', 'lock_lpf_F1_order' ] )>-1 ) lpf_update();
 
     params.local[param_name] = parseInt(that.val());
     sendParams(do_get);
@@ -3019,10 +3025,10 @@
     $('#lock_lpf_F0_order'      ).val(params.original.lock_lpf_F0_order         );
     $('#lock_lpf_F1_tau'        ).val(params.original.lock_lpf_F1_tau           );
     $('#lock_lpf_F1_order'      ).val(params.original.lock_lpf_F1_order         );
-    $('#lock_lpf_F2_tau'        ).val(params.original.lock_lpf_F2_tau           );
-    $('#lock_lpf_F2_order'      ).val(params.original.lock_lpf_F2_order         );
-    $('#lock_lpf_F3_tau'        ).val(params.original.lock_lpf_F3_tau           );
-    $('#lock_lpf_F3_order'      ).val(params.original.lock_lpf_F3_order         );
+    // $('#lock_lpf_F2_tau'        ).val(params.original.lock_lpf_F2_tau           );
+    // $('#lock_lpf_F2_order'      ).val(params.original.lock_lpf_F2_order         );
+    // $('#lock_lpf_F3_tau'        ).val(params.original.lock_lpf_F3_tau           );
+    // $('#lock_lpf_F3_order'      ).val(params.original.lock_lpf_F3_order         );
     $('#lock_error_sw'          ).val(params.original.lock_error_sw             );
     $('#lock_read_ctrl'         ).val(params.original.lock_read_ctrl            );
     $('#lock_pidA_sw'           ).val(params.original.lock_pidA_sw              );
@@ -3100,7 +3106,7 @@
     lock_pidA_update();
     lock_pidB_update();
     lpf_update();
-    // display_update();
+    display_update();
 
     updateTimeUnits(orig_params);
     $('#ytitle').show();
@@ -4833,10 +4839,8 @@
                     </div>
                     <div class="panel-group col-xs-12 col-sm-12 col-md-12" id='Fnavtabs'>
                       <ul class="nav nav-tabs">
-                        <li id="tab_F0_head" class="active"><a href="#!">X & Y</a></li>
-                        <li id="tab_F1_head"><a href="#!">F1</a></li>
-                        <li id="tab_F2_head"><a href="#!">F2</a></li>
-                        <li id="tab_F3_head"><a href="#!">F3</a></li>
+                        <li id="tab_F0_head" class="active"><a href="#!">LI A</a></li>
+                        <li id="tab_F1_head"><a href="#!">LI B</a></li>
                       </ul>
                     </div>
                   </div>
@@ -4973,126 +4977,6 @@
                     </div>
                   </div>
 
-
-                  <div class="row" id="tab_F2_body" style="background-color: #F2F2F2; display: none;">
-                    <div class="panel-group col-xs-12 col-sm-12 col-md-12 text-center">
-                      <p>Low Pass Filter</p>
-                    </div>
-                    <div class="panel-group col-xs-12 col-sm-12 col-md-12">
-                      <form class="form-horizontal" role="form" onsubmit="return false;">
-                        <div class="form-group">
-                          <div class="col-xs-8"> cut
-                            <select id="lock_lpf_F2_tau" class="form-control">
-                              <option  value="0" selected="selected"> 131 us |  1.2 kHz</option>
-                              <option  value="1"> 262 us | 607.1  Hz</option>
-                              <option  value="2"> 524 us | 303.6  Hz</option>
-                              <option  value="3">   1 ms | 151.8  Hz</option>
-                              <option  value="4">   2 ms | 75.9  Hz</option>
-                              <option  value="5">   4 ms | 37.9  Hz</option>
-                              <option  value="6">   8 ms | 19.0  Hz</option>
-                              <option  value="7">  17 ms |  9.5  Hz</option>
-                              <option  value="8">  34 ms |  4.7  Hz</option>
-                              <option  value="9">  67 ms |  2.4  Hz</option>
-                              <option  value="10"> 134 ms |  1.2  Hz</option>
-                              <option  value="11"> 268 ms | 592.9 mHz</option>
-                              <option  value="12"> 537 ms | 296.4 mHz</option>
-                              <option  value="13">   1  s | 148.2 mHz</option>
-                              <option  value="14">   2  s | 74.1 mHz</option>
-                              <option  value="15">   4  s | 37.1 mHz</option>
-                            </select>
-                          </div>
-                          <div class="col-xs-4"> order
-                            <select id="lock_lpf_F2_order" class="form-control">
-                              <option  value="0">OFF</option>
-                              <option  value="1">1</option>
-                              <option  value="2" selected="selected">2</option>
-                            </select>
-                          </div>
-                        </div>
-                      </form>
-                    </div>
-                    <div class="panel-group col-xs-12 col-sm-12 col-md-12">
-                      <form class="form-horizontal" role="form" onsubmit="return false;">
-                        <div class="form-group">
-                          <label for="lock_sg_amp2" class="col-xs-6 control-label">Amplification</label>
-                          <div class="col-xs-6">
-                            <select id="lock_sg_amp2" class="form-control">
-                              <option  value="0" selected="selected">x1</option>
-                              <option  value="1">x2</option>
-                              <option  value="2">x4</option>
-                              <option  value="3">x8</option>
-                              <option  value="4">x16</option>
-                              <option  value="5">x32</option>
-                              <option  value="6">x64</option>
-                              <option  value="7">x128</option>
-                              <option  value="8">x256</option>
-                              <option  value="9">x512</option>
-                            </select>
-                          </div>
-                        </div>
-                      </form>
-                    </div>
-                  </div>
-
-                  <div class="row" id="tab_F3_body" style="background-color: #F2F2F2; display: none;">
-                    <div class="panel-group col-xs-12 col-sm-12 col-md-12 text-center">
-                      <p>Low Pass Filter</p>
-                    </div>
-                    <div class="panel-group col-xs-12 col-sm-12 col-md-12">
-                      <form class="form-horizontal" role="form" onsubmit="return false;">
-                        <div class="form-group">
-                          <div class="col-xs-8"> cut
-                            <select id="lock_lpf_F3_tau" class="form-control">
-                              <option  value="0" selected="selected"> 131 us |  1.2 kHz</option>
-                              <option  value="1"> 262 us | 607.1  Hz</option>
-                              <option  value="2"> 524 us | 303.6  Hz</option>
-                              <option  value="3">   1 ms | 151.8  Hz</option>
-                              <option  value="4">   2 ms | 75.9  Hz</option>
-                              <option  value="5">   4 ms | 37.9  Hz</option>
-                              <option  value="6">   8 ms | 19.0  Hz</option>
-                              <option  value="7">  17 ms |  9.5  Hz</option>
-                              <option  value="8">  34 ms |  4.7  Hz</option>
-                              <option  value="9">  67 ms |  2.4  Hz</option>
-                              <option  value="10"> 134 ms |  1.2  Hz</option>
-                              <option  value="11"> 268 ms | 592.9 mHz</option>
-                              <option  value="12"> 537 ms | 296.4 mHz</option>
-                              <option  value="13">   1  s | 148.2 mHz</option>
-                              <option  value="14">   2  s | 74.1 mHz</option>
-                              <option  value="15">   4  s | 37.1 mHz</option>
-                            </select>
-                          </div>
-                          <div class="col-xs-4"> order
-                            <select id="lock_lpf_F3_order" class="form-control">
-                              <option  value="0">OFF</option>
-                              <option  value="1">1</option>
-                              <option  value="2" selected="selected">2</option>
-                            </select>
-                          </div>
-                        </div>
-                      </form>
-                    </div>
-                    <div class="panel-group col-xs-12 col-sm-12 col-md-12">
-                      <form class="form-horizontal" role="form" onsubmit="return false;">
-                        <div class="form-group">
-                          <label for="lock_sg_amp3" class="col-xs-6 control-label">Amplification</label>
-                          <div class="col-xs-6">
-                            <select id="lock_sg_amp3" class="form-control">
-                              <option  value="0" selected="selected">x1</option>
-                              <option  value="1">x2</option>
-                              <option  value="2">x4</option>
-                              <option  value="3">x8</option>
-                              <option  value="4">x16</option>
-                              <option  value="5">x32</option>
-                              <option  value="6">x64</option>
-                              <option  value="7">x128</option>
-                              <option  value="8">x256</option>
-                              <option  value="9">x512</option>
-                            </select>
-                          </div>
-                        </div>
-                      </form>
-                    </div>
-                  </div>
 
                 </div>
               </div>
@@ -6456,6 +6340,7 @@
                 <div class="panel-body">
                   <!-- div class="panel-group col-xs-12 col-sm-12 col-md-12" -->
 
+                  <!-- X and Y -->
                   <div class="row text-center">
                     <div class="panel-group col-xs-12 col-sm-6 col-md-6">
                       <h2><label class="group-label" for="disp_x">X</label></h2>
@@ -6484,30 +6369,37 @@
                       <h2><span class="label label-info" style="display:block;" id="disp_fi">Valor</span></h2>
                     </div>
                   </div>
-
+                  <hr style="border-top: 2px solid black ; margin: 7px 7px">
+                  <!-- X2 and Y2 -->
                   <div class="row text-center">
-                    <div class="panel-group col-xs-12 col-sm-4 col-md-4">
-                      <h3><label class="group-label" for="disp_F1">F1</label></h3>
-                      <h3><span class="label label-info" style="display:block;" id="disp_F1">Valor</span></h3>
+                    <div class="panel-group col-xs-12 col-sm-6 col-md-6">
+                      <h2><label class="group-label" for="disp_x2">X2</label></h2>
+                      <h2><span class="label label-info" style="display:block;" id="disp_x2">Valor</span></h2>
                       <div class="progress" style="height: 5px;">
-                        <div id="disp_F1_bar" class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width:0%; height: 5px;"></div>
+                        <div id="disp_x2_bar" class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width:0%; height: 5px;" ></div>
                       </div>
                     </div>
-                    <div class="panel-group col-xs-12 col-sm-4 col-md-4">
-                      <h3><label class="group-label" for="disp_F2">F2</label></h3>
-                      <h3><span class="label label-info" style="display:block;" id="disp_F2">Valor</span></h3>
+
+                    <div class="panel-group col-xs-12 col-sm-6 col-md-6">
+                      <h2><label class="group-label" for="disp_y2">Y2</label></h2>
+                      <h2><span class="label label-info" style="display:block;" id="disp_y2">Valor</span></h2>
                       <div class="progress" style="height: 5px;">
-                        <div id="disp_F2_bar" class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width:0%; height: 5px;"></div>
-                      </div>
-                    </div>
-                    <div class="panel-group col-xs-12 col-sm-4 col-md-4">
-                      <h3><label class="group-label" for="disp_F3">F3</label></h3>
-                      <h3><span class="label label-info" style="display:block;" id="disp_F3">Valor</span></h3>
-                      <div class="progress" style="height: 5px;">
-                        <div id="disp_F3_bar" class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width:0%; height: 5px;"></div>
+                        <div id="disp_y2_bar" class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width:0%; height: 5px;"></div>
                       </div>
                     </div>
                   </div>
+
+                  <div class="row text-center">
+                    <div class="panel-group col-xs-12 col-sm-6 col-md-6">
+                      <h2><label class="group-label" for="disp_r2">R2</label></h2>
+                      <h2><span class="label label-info" style="display:block;" id="disp_r2">Valor</span></h2>
+                    </div>
+                    <div class="panel-group col-xs-12 col-sm-6 col-md-6">
+                      <h2><label class="group-label" for="disp_fi2">ϕ2</label></h2>
+                      <h2><span class="label label-info" style="display:block;" id="disp_fi2">Valor</span></h2>
+                    </div>
+                  </div>
+
                 </div>
 
 
