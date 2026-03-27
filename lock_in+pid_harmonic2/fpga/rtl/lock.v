@@ -921,8 +921,8 @@ module lock(
             else begin
                 X_28_reg     <=  X_28;
                 Y_28_reg     <=  Y_28;
-                X2_28_reg    <=  28'b0; // LOLO ERASE
-                Y2_28_reg    <=  28'b0; // LOLO ERASE
+                X2_28_reg    <=  X2_28;
+                Y2_28_reg    <=  Y2_28;
                 F3_28_reg    <=  28'b0; // LOLO ERASE
                 signal_i_reg <=  signal_i;
                 signal2_i_reg <=  signal2_i;
