@@ -335,6 +335,8 @@ static rp_app_params_t rp_main_params[PARAMS_NUM+1] = {
     { "lock_sf_BfrzI"                 ,      0, 1, 0,            0,            1 }, /** Step function pidB_ifreeze  **/
     { "lock_signal_sw"                ,      0, 1, 0,            0,            7 }, /** Input selector for signal_i **/
     { "lock_signal_i"                 ,      0, 0, 1,        -8192,         8191 }, /** signal for demodulation **/
+    { "lock_signal2_sw"               ,      0, 1, 0,            0,            7 }, /** Input selector for signal2_i **/
+    { "lock_signal2_i"                ,      0, 0, 1,        -8192,         8191 }, /** signal2 for demodulation **/
     { "lock_sg_amp0"                  ,      0, 1, 0,            0,           31 }, /** amplification of Xo, Yo **/
     { "lock_sg_amp1"                  ,      0, 1, 0,            0,           15 }, /** amplification of F1o **/
     { "lock_sg_amp2"                  ,      0, 1, 0,            0,           15 }, /** amplification of F2o **/
@@ -380,8 +382,8 @@ static rp_app_params_t rp_main_params[PARAMS_NUM+1] = {
     { "lock_oscB"                     ,      0, 0, 1,        -8192,         8191 }, /** signal for Oscilloscope Channel B **/
     { "lock_X"                        ,      0, 0, 1,   -134217728,    134217727 }, /** Demodulated signal from sin_ref **/
     { "lock_Y"                        ,      0, 0, 1,   -134217728,    134217727 }, /** Demodulated signal from cos_ref **/
-    { "lock_F1"                       ,      0, 0, 1,   -134217728,    134217727 }, /** Demodulated signal from cos_1f **/
-    { "lock_F2"                       ,      0, 0, 1,   -134217728,    134217727 }, /** Demodulated signal from cos_2f **/
+    { "lock_X2"                       ,      0, 0, 1,   -134217728,    134217727 }, /** Demodulated signal from cos_1f **/
+    { "lock_Y2"                       ,      0, 0, 1,   -134217728,    134217727 }, /** Demodulated signal from cos_2f **/
     { "lock_F3"                       ,      0, 0, 1,   -134217728,    134217727 }, /** Demodulated signal from cos_3f **/
     { "lock_cnt_clk"                  ,      0, 0, 1,            0,   0xffffffff }, /** Clock count **/
     { "lock_cnt_clk2"                 ,      0, 0, 1,            0,   0xffffffff }, /** Clock count **/

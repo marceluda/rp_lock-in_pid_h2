@@ -131,10 +131,10 @@
                        'lock_oscA_sw,lock_oscB_sw,lock_osc1_filt_off,lock_osc2_filt_off,lock_osc_raw_mode,lock_osc_lockin_mode,lock_trig_sw,'+
                        'lock_out1_sw,lock_out2_sw,lock_lock_control,lock_lock_trig_val,lock_lock_trig_time_val,lock_lock_trig_sw,lock_rl_error_threshold,'+
                        'lock_rl_signal_sw,lock_rl_signal_threshold,lock_rl_error_enable,lock_rl_signal_enable,lock_rl_reset,lock_sf_jumpA,'+
-                       'lock_sf_jumpB,lock_sf_start,lock_sf_AfrzO,lock_sf_AfrzI,lock_sf_BfrzO,lock_sf_BfrzI,lock_signal_sw,lock_sg_amp0,'+
-                       'lock_sg_amp1,lock_sg_amp2,lock_sg_amp3,lock_lpf_F0_tau,lock_lpf_F0_order,lock_lpf_F1_tau,lock_lpf_F1_order,lock_lpf_F2_tau,'+
-                       'lock_lpf_F2_order,lock_lpf_F3_tau,lock_lpf_F3_order,lock_error_sw,lock_error_offset,lock_mod_out1,lock_mod_out2,'+
-                       'lock_gen_mod_phase_A,lock_gen_mod_phase_B,lock_gen_mod_hp,lock_ramp_step,lock_ramp_low_lim,lock_ramp_hig_lim,'+
+                       'lock_sf_jumpB,lock_sf_start,lock_sf_AfrzO,lock_sf_AfrzI,lock_sf_BfrzO,lock_sf_BfrzI,lock_signal_sw,lock_signal2_sw,'+
+                       'lock_sg_amp0,lock_sg_amp1,lock_sg_amp2,lock_sg_amp3,lock_lpf_F0_tau,lock_lpf_F0_order,lock_lpf_F1_tau,lock_lpf_F1_order,'+
+                       'lock_lpf_F2_tau,lock_lpf_F2_order,lock_lpf_F3_tau,lock_lpf_F3_order,lock_error_sw,lock_error_offset,lock_mod_out1,'+
+                       'lock_mod_out2,lock_gen_mod_phase_A,lock_gen_mod_phase_B,lock_gen_mod_hp,lock_ramp_step,lock_ramp_low_lim,lock_ramp_hig_lim,'+
                        'lock_ramp_reset,lock_ramp_enable,lock_ramp_direction,lock_ramp_sawtooth,lock_ramp_B_factor,lock_read_ctrl,lock_pidA_sw,'+
                        'lock_pidA_PSR,lock_pidA_ISR,lock_pidA_DSR,lock_pidA_SAT,lock_pidA_sp,lock_pidA_kp,lock_pidA_ki,lock_pidA_kd,lock_pidA_irst,'+
                        'lock_pidA_freeze,lock_pidA_ifreeze,lock_pidB_sw,lock_pidB_PSR,lock_pidB_ISR,lock_pidB_DSR,lock_pidB_SAT,lock_pidB_sp,'+
@@ -1368,10 +1368,11 @@
 
     // Switches
     var switches=['#lock_oscA_sw','#lock_oscB_sw','#lock_trig_sw','#lock_out1_sw','#lock_out2_sw','#lock_lock_trig_sw','#lock_rl_signal_sw',
-                  '#lock_signal_sw','#lock_sg_amp0','#lock_sg_amp1','#lock_sg_amp2','#lock_sg_amp3','#lock_lpf_F0_tau','#lock_lpf_F0_order',
-                  '#lock_lpf_F1_tau','#lock_lpf_F1_order','#lock_lpf_F2_tau','#lock_lpf_F2_order','#lock_lpf_F3_tau','#lock_lpf_F3_order',
-                  '#lock_error_sw','#lock_read_ctrl','#lock_pidA_sw','#lock_pidA_PSR','#lock_pidA_ISR','#lock_pidA_DSR','#lock_pidA_SAT',
-                  '#lock_pidB_sw','#lock_pidB_PSR','#lock_pidB_ISR','#lock_pidB_DSR','#lock_pidB_SAT','#lock_stream_rate','#lock_ctrl_aux_trig_type'];
+                  '#lock_signal_sw','#lock_signal2_sw','#lock_sg_amp0','#lock_sg_amp1','#lock_sg_amp2','#lock_sg_amp3','#lock_lpf_F0_tau',
+                  '#lock_lpf_F0_order','#lock_lpf_F1_tau','#lock_lpf_F1_order','#lock_lpf_F2_tau','#lock_lpf_F2_order','#lock_lpf_F3_tau',
+                  '#lock_lpf_F3_order','#lock_error_sw','#lock_read_ctrl','#lock_pidA_sw','#lock_pidA_PSR','#lock_pidA_ISR','#lock_pidA_DSR',
+                  '#lock_pidA_SAT','#lock_pidB_sw','#lock_pidB_PSR','#lock_pidB_ISR','#lock_pidB_DSR','#lock_pidB_SAT','#lock_stream_rate',
+                  '#lock_ctrl_aux_trig_type'];
     for(ii in switches)
         $(switches[ii]).on('change', function() { onDropdownChange($(this), $(this)[0].id ); });
 
@@ -3009,6 +3010,7 @@
     $('#lock_lock_trig_sw'      ).val(params.original.lock_lock_trig_sw         );
     $('#lock_rl_signal_sw'      ).val(params.original.lock_rl_signal_sw         );
     $('#lock_signal_sw'         ).val(params.original.lock_signal_sw            );
+    $('#lock_signal2_sw'        ).val(params.original.lock_signal2_sw           );
     $('#lock_sg_amp0'           ).val(params.original.lock_sg_amp0              );
     $('#lock_sg_amp1'           ).val(params.original.lock_sg_amp1              );
     $('#lock_sg_amp2'           ).val(params.original.lock_sg_amp2              );
@@ -3098,7 +3100,7 @@
     lock_pidA_update();
     lock_pidB_update();
     lpf_update();
-    display_update();
+    // display_update();
 
     updateTimeUnits(orig_params);
     $('#ytitle').show();
@@ -4366,10 +4368,10 @@
                             <option  value="16">sin_B</option>
                             <option  value="17">Xo</option>
                             <option  value="18">Yo</option>
-                            <option  value="19">F1o</option>
-                            <option  value="20">F2o</option>
-                            <option  value="21">F3o</option>
-                            <option  value="22">signal_i</option>
+                            <option  value="19">X2o</option>
+                            <option  value="20">Y2o</option>
+                            <option  value="21">signal_i</option>
+                            <option  value="22">signal2_i</option>
                             <option  value="23">out1</option>
                             <option  value="24">out2</option>
                             <!--option value="25">0</option-->
@@ -4409,10 +4411,10 @@
                             <option  value="16">sin_B</option>
                             <option  value="17">Xo</option>
                             <option  value="18">Yo</option>
-                            <option  value="19">F1o</option>
-                            <option  value="20">F2o</option>
-                            <option  value="21">F3o</option>
-                            <option  value="22">signal_i</option>
+                            <option  value="19">X2o</option>
+                            <option  value="20">Y2o</option>
+                            <option  value="21">signal_i</option>
+                            <option  value="22">signal2_i</option>
                             <option  value="23">out1</option>
                             <option  value="24">out2</option>
                             <!--option value="25">0</option-->
@@ -4692,7 +4694,6 @@
                     </div>
                   </div>
 
-
                 </div>
 
               </div>
@@ -4718,9 +4719,30 @@
                 <div class="panel-group col-xs-12 col-sm-12 col-md-12">
                   <form class="form-horizontal" role="form" onsubmit="return false;">
                     <div class="form-group">
-                      <label for="lock_signal_sw" class="col-xs-4 control-label">Lock-in input:</label>
+                      <label for="lock_signal_sw" class="col-xs-4 control-label">Lock-in input A:</label>
                       <div class="col-xs-8">
                         <select id="lock_signal_sw" class="form-control">
+                          <option  value="0" selected="selected">in1</option>
+                          <option  value="1">in2</option>
+                          <option  value="2">in1-in2</option>
+                          <option  value="3">cos_ref</option>
+                          <option  value="4">sin_ref</option>
+                          <option  value="5">cos_1f</option>
+                          <option  value="6">aux_A</option>
+                          <option  value="7">Ramp A</option>
+                        </select>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+              </div>
+              <div class="row">
+                <div class="panel-group col-xs-12 col-sm-12 col-md-12">
+                  <form class="form-horizontal" role="form" onsubmit="return false;">
+                    <div class="form-group">
+                      <label for="lock_signal2_sw" class="col-xs-4 control-label">Lock-in input B:</label>
+                      <div class="col-xs-8">
+                        <select id="lock_signal2_sw" class="form-control">
                           <option  value="0" selected="selected">in1</option>
                           <option  value="1">in2</option>
                           <option  value="2">in1-in2</option>
@@ -4774,7 +4796,7 @@
                     <div class="panel-group col-xs-12 col-sm-12 col-md-12">
                       <form class="form-horizontal" role="form" onsubmit="return false;">
                         <div class="form-group">
-                          <label for="lock_gen_mod_phase_A" class="col-xs-4 control-label">Phase:</label>
+                          <label for="lock_gen_mod_phase_A" class="col-xs-4 control-label">Phase A:</label>
                           <div class="col-xs-4 col-sm-8">
                             <input type="number" autocomplete="off" class="form-control" value="0" id="lock_gen_mod_phase_A" step="1" min="0" max="2519">
                             <span style="display: none;" class="input-group-btn" id="lock_gen_mod_phase_A_apply">
@@ -4790,7 +4812,7 @@
                     <div class="panel-group col-xs-12 col-sm-12 col-md-12">
                       <form class="form-horizontal" role="form" onsubmit="return false;">
                         <div class="form-group">
-                          <label for="lock_gen_mod_phase_B" class="col-xs-4 control-label">Phase:</label>
+                          <label for="lock_gen_mod_phase_B" class="col-xs-4 control-label">Phase B:</label>
                           <div class="col-xs-4 col-sm-8">
                             <input type="number" autocomplete="off" class="form-control" value="0" id="lock_gen_mod_phase_B" step="1" min="0" max="2519">
                             <span style="display: none;" class="input-group-btn" id="lock_gen_mod_phase_B_apply">
@@ -5325,8 +5347,8 @@
                           <option  value="0" selected="selected">0</option>
                           <option  value="1">Xo</option>
                           <option  value="2">Yo</option>
-                          <option  value="3">F1o</option>
-                          <option  value="4">F2o</option>
+                          <option  value="3">X2o</option>
+                          <option  value="4">Y2o</option>
                           <option  value="5">F3o</option>
                           <option  value="6">in1</option>
                           <option  value="7">in1-in2</option>
@@ -5373,11 +5395,11 @@
                               <option  value="0" selected="selected">error</option>
                               <option data-tag="pidA_more" value="1">Xo</option>
                               <option data-tag="pidA_more" value="2">Yo</option>
-                              <option data-tag="pidA_more" value="3">F1o</option>
-                              <option data-tag="pidA_more" value="4">F2o</option>
+                              <option data-tag="pidA_more" value="3">X2o</option>
+                              <option data-tag="pidA_more" value="4">Y2o</option>
                               <option data-tag="pidA_more" value="5">F3o</option>
                               <option data-tag="pidA_more" value="6">signal_i</option>
-                              <option data-tag="pidA_more" value="7">Ramp A</option>
+                              <option data-tag="pidA_more" value="7">signal2_i</option>
                               <option data-tag="pidA_more" value="8">in1-in2</option>
                               <option  value="9">in1</option>
                               <option data-tag="pidA_more" value="10">in2</option>
@@ -5640,11 +5662,11 @@
                               <option  value="0" selected="selected">error</option>
                               <option data-tag="pidB_more" value="1">Xo</option>
                               <option data-tag="pidB_more" value="2">Yo</option>
-                              <option data-tag="pidB_more" value="3">F1o</option>
-                              <option data-tag="pidB_more" value="4">F2o</option>
+                              <option data-tag="pidB_more" value="3">X2o</option>
+                              <option data-tag="pidB_more" value="4">Y2o</option>
                               <option data-tag="pidB_more" value="5">F3o</option>
                               <option data-tag="pidB_more" value="6">signal_i</option>
-                              <option data-tag="pidB_more" value="7">Ramp A</option>
+                              <option data-tag="pidB_more" value="7">signal2_i</option>
                               <option data-tag="pidB_more" value="8">in1-in2</option>
                               <option  value="9">in1</option>
                               <option data-tag="pidB_more" value="10">in2</option>
@@ -6212,8 +6234,8 @@
                               <option  value="0" selected="selected">error</option>
                               <option  value="1">Xo</option>
                               <option  value="2">Yo</option>
-                              <option  value="3">F1o</option>
-                              <option  value="4">F2o</option>
+                              <option  value="3">X2o</option>
+                              <option  value="4">Y2o</option>
                               <option  value="5">F3o</option>
                               <option  value="6">/*sqXo */ 14'b0</option>
                               <option  value="7">/*sqYo */ 14'b0</option>

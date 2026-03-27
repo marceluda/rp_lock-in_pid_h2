@@ -98,6 +98,8 @@ void reset_locks(void)
         g_lock_reg->sf_config            =      0;
         g_lock_reg->signal_sw            =      0;
         g_lock_reg->signal_i             =      0;
+        g_lock_reg->signal2_sw           =      0;
+        g_lock_reg->signal2_i            =      0;
         g_lock_reg->sg_amp0              =      0;
         g_lock_reg->sg_amp1              =      0;
         g_lock_reg->sg_amp2              =      0;
@@ -139,8 +141,8 @@ void reset_locks(void)
         g_lock_reg->oscB                 =      0;
         g_lock_reg->X_28                 =      0;
         g_lock_reg->Y_28                 =      0;
-        g_lock_reg->F1_28                =      0;
-        g_lock_reg->F2_28                =      0;
+        g_lock_reg->X2_28                =      0;
+        g_lock_reg->Y2_28                =      0;
         g_lock_reg->F3_28                =      0;
         g_lock_reg->cnt_clk              =      0;
         g_lock_reg->cnt_clk2             =      0;

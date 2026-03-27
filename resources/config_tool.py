@@ -190,6 +190,9 @@ f.add( name="sf_config"          , group=grp , val=    0, rw=True ,  nbits= 5, m
 grp='lock-in'
 f.add( name="signal_sw"          , group=grp , val=    0, rw=True ,  nbits= 3, min_val=          0, max_val=          7, fpga_update=True , signed=False, desc="Input selector for signal_i" )
 f.add( name="signal_i"           , group=grp , val=    0, rw=False,  nbits=14, min_val=      -8192, max_val=       8191, fpga_update=False, signed=True , desc="signal for demodulation" )
+f.add( name="signal2_sw"         , group=grp , val=    0, rw=True ,  nbits= 3, min_val=          0, max_val=          7, fpga_update=True , signed=False, desc="Input selector for signal2_i" )
+f.add( name="signal2_i"          , group=grp , val=    0, rw=False,  nbits=14, min_val=      -8192, max_val=       8191, fpga_update=False, signed=True , desc="signal2 for demodulation" )
+
 f.add( name="sg_amp0"            , group=grp , val=    0, rw=True ,  nbits= 5, min_val=          0, max_val=         31, fpga_update=True , signed=False, desc="amplification of Xo, Yo" )
 f.add( name="sg_amp1"            , group=grp , val=    0, rw=True ,  nbits= 4, min_val=          0, max_val=         15, fpga_update=True , signed=False, desc="amplification F1o" )
 f.add( name="sg_amp2"            , group=grp , val=    0, rw=True ,  nbits= 4, min_val=          0, max_val=         15, fpga_update=True , signed=False, desc="amplification of F2o" )
@@ -256,8 +259,8 @@ f.add( name="oscB"               , group=grp , val=    0, rw=False,  nbits=14, m
 grp='product_signals'
 f.add( name="X_28"               , group=grp , val=    0, rw=False,  nbits=28, min_val= -134217728, max_val=  134217727, fpga_update=True , signed=True , desc="Demodulated signal from sin_ref" )
 f.add( name="Y_28"               , group=grp , val=    0, rw=False,  nbits=28, min_val= -134217728, max_val=  134217727, fpga_update=True , signed=True , desc="Demodulated signal from cos_ref" )
-f.add( name="F1_28"              , group=grp , val=    0, rw=False,  nbits=28, min_val= -134217728, max_val=  134217727, fpga_update=True , signed=True , desc="Demodulated signal from cos_1f" )
-f.add( name="F2_28"              , group=grp , val=    0, rw=False,  nbits=28, min_val= -134217728, max_val=  134217727, fpga_update=True , signed=True , desc="Demodulated signal from cos_2f" )
+f.add( name="X2_28"              , group=grp , val=    0, rw=False,  nbits=28, min_val= -134217728, max_val=  134217727, fpga_update=True , signed=True , desc="Demodulated signal from cos_1f" )
+f.add( name="Y2_28"              , group=grp , val=    0, rw=False,  nbits=28, min_val= -134217728, max_val=  134217727, fpga_update=True , signed=True , desc="Demodulated signal from cos_2f" )
 f.add( name="F3_28"              , group=grp , val=    0, rw=False,  nbits=28, min_val= -134217728, max_val=  134217727, fpga_update=True , signed=True , desc="Demodulated signal from cos_3f" )
 f.add( name="cnt_clk"            , group=grp , val=    0, rw=False,  nbits=32, min_val=          0, max_val= 4294967295, fpga_update=False, signed=False, desc="Clock count" )
 f.add( name="cnt_clk2"           , group=grp , val=    0, rw=False,  nbits=32, min_val=          0, max_val= 4294967295, fpga_update=False, signed=False, desc="Clock count" )
@@ -326,8 +329,8 @@ for i in ['osc_ctrl','in1','in2','out1','out2']:
     f[i].write_def=False
 
 # Set read-only to same registers
-for i in ['X_28', 'Y_28', 'F1_28', 'F2_28', 'F3_28',
-          'error', 'ctrl_A', 'ctrl_B','signal_i']:
+for i in ['X_28', 'Y_28', 'X2_28', 'Y2_28', 'F3_28',
+          'error', 'ctrl_A', 'ctrl_B','signal_i','signal2_i']:
     f[i].reg_read=True
 
 
@@ -754,8 +757,10 @@ r=f["sf_config"            ]; r.c_update='(((int)params[{:s}].value) << 4 ) +(((
 
 
 # group: lock-in
-m.add( name="lock_signal_sw"     , fpga_reg="signal_sw"     , val=0    , rw=True , nbits=3 , min_val=0         , max_val=7        , fpga_update=True , signed=False, group="lock-in"        , desc="Input selector for signal_i")
+m.add( name="lock_signal_sw"     , fpga_reg="signal_sw"     , val=0    , rw=True , nbits=3 , min_val=0         , max_val=7         , fpga_update=True , signed=False, group="lock-in"        , desc="Input selector for signal_i")
 m.add( name="lock_signal_i"      , fpga_reg="signal_i"      , val=0    , rw=False, nbits=14, min_val=-8192     , max_val=8191      , fpga_update=False, signed=True , group="lock-in"        , desc="signal for demodulation")
+m.add( name="lock_signal2_sw"    , fpga_reg="signal2_sw"    , val=0    , rw=True , nbits=3 , min_val=0         , max_val=7         , fpga_update=True , signed=False, group="lock-in"        , desc="Input selector for signal2_i")
+m.add( name="lock_signal2_i"     , fpga_reg="signal2_i"     , val=0    , rw=False, nbits=14, min_val=-8192     , max_val=8191      , fpga_update=False, signed=True , group="lock-in"        , desc="signal2 for demodulation")
 m.add( name="lock_sg_amp0"       , fpga_reg="sg_amp0"       , val=0    , rw=True , nbits=5 , min_val=0         , max_val=31        , fpga_update=True , signed=False, group="lock-in"        , desc="amplification of Xo, Yo")
 m.add( name="lock_sg_amp1"       , fpga_reg="sg_amp1"       , val=0    , rw=True , nbits=4 , min_val=0         , max_val=15        , fpga_update=True , signed=False, group="lock-in"        , desc="amplification of F1o")
 m.add( name="lock_sg_amp2"       , fpga_reg="sg_amp2"       , val=0    , rw=True , nbits=4 , min_val=0         , max_val=15        , fpga_update=True , signed=False, group="lock-in"        , desc="amplification of F2o")
@@ -834,8 +839,8 @@ m.add( name="lock_oscB"          , fpga_reg="oscB"          , val=0    , rw=Fals
 # group: product_signals
 m.add( name="lock_X_28"         , fpga_reg="X_28"         , val=0    , rw=False, nbits=28, min_val=-134217728, max_val=134217727 , fpga_update=False, signed=True , group="product_signals", desc="Demodulated signal from sin_ref")
 m.add( name="lock_Y_28"         , fpga_reg="Y_28"         , val=0    , rw=False, nbits=28, min_val=-134217728, max_val=134217727 , fpga_update=False, signed=True , group="product_signals", desc="Demodulated signal from cos_ref")
-m.add( name="lock_F1_28"         , fpga_reg="F1_28"         , val=0    , rw=False, nbits=28, min_val=-134217728, max_val=134217727 , fpga_update=False, signed=True , group="product_signals", desc="Demodulated signal from cos_1f")
-m.add( name="lock_F2_28"         , fpga_reg="F2_28"         , val=0    , rw=False, nbits=28, min_val=-134217728, max_val=134217727 , fpga_update=False, signed=True , group="product_signals", desc="Demodulated signal from cos_2f")
+m.add( name="lock_X2_28"         , fpga_reg="X2_28"         , val=0    , rw=False, nbits=28, min_val=-134217728, max_val=134217727 , fpga_update=False, signed=True , group="product_signals", desc="Demodulated signal from cos_1f")
+m.add( name="lock_Y2_28"         , fpga_reg="Y2_28"         , val=0    , rw=False, nbits=28, min_val=-134217728, max_val=134217727 , fpga_update=False, signed=True , group="product_signals", desc="Demodulated signal from cos_2f")
 m.add( name="lock_F3_28"         , fpga_reg="F3_28"         , val=0    , rw=False, nbits=28, min_val=-134217728, max_val=134217727 , fpga_update=False, signed=True , group="product_signals", desc="Demodulated signal from cos_3f")
 m.add( name="lock_cnt_clk"       , fpga_reg="cnt_clk"       , val=0    , rw=False, nbits=32, min_val=0          , max_val=4294967295, fpga_update=False, signed=False, group="product_signals", desc="Clock count")
 m.add( name="lock_cnt_clk2"      , fpga_reg="cnt_clk2"      , val=0    , rw=False, nbits=32, min_val=0          , max_val=4294967295, fpga_update=False, signed=False, group="product_signals", desc="Clock count")
