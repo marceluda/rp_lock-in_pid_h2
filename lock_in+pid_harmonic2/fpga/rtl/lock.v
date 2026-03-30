@@ -243,8 +243,8 @@ module lock(
     wire signed  [ 28-1: 0]   cos_1f_lpf2,   cos_2f_lpf2,   cos_3f_lpf2;
     wire signed  [ 38-1: 0]   sin_ref_lpf2,  cos_ref_lpf2 ;
 
-    wire signed  [  6-1: 0]       lpf_X_A,      lpf_Y_A,      lpf_F1_A,      lpf_F2_A,      lpf_F3_A;
-    wire signed  [  6-1: 0]       lpf_X_B,      lpf_Y_B,      lpf_F1_B,      lpf_F2_B,      lpf_F3_B;
+    wire signed  [  6-1: 0]       lpf_X_A,      lpf_Y_A,      lpf_F1_A;
+    wire signed  [  6-1: 0]       lpf_X_B,      lpf_Y_B,      lpf_F1_B;
 
     reg  stream_cmd_last;
     wire stream_cmd_last_next;
@@ -742,15 +742,13 @@ module lock(
     assign     lpf_X_A   =   { ~lpf_F0[5], ~lpf_F0[5], lpf_F0[4-1:0]} ;
     assign     lpf_Y_A   =   { ~lpf_F0[5], ~lpf_F0[5], lpf_F0[4-1:0]} ;
     assign     lpf_F1_A   =   { ~lpf_F1[5], ~lpf_F1[5], lpf_F1[4-1:0]} ;
-    assign     lpf_F2_A   =   { ~lpf_F2[5], ~lpf_F2[5], lpf_F2[4-1:0]} ;
-    assign     lpf_F3_A   =   { ~lpf_F3[5], ~lpf_F3[5], lpf_F3[4-1:0]} ;
+
 
 
     assign     lpf_X_B   =   { ~(^lpf_F0[5:4]), ~(^lpf_F0[5:4]), lpf_F0[4-1:0]} ;
     assign     lpf_Y_B   =   { ~(^lpf_F0[5:4]), ~(^lpf_F0[5:4]), lpf_F0[4-1:0]} ;
     assign     lpf_F1_B   =   { ~(^lpf_F1[5:4]), ~(^lpf_F1[5:4]), lpf_F1[4-1:0]} ;
-    assign     lpf_F2_B   =   { ~(^lpf_F2[5:4]), ~(^lpf_F2[5:4]), lpf_F2[4-1:0]} ;
-    assign     lpf_F3_B   =   { ~(^lpf_F3[5:4]), ~(^lpf_F3[5:4]), lpf_F3[4-1:0]} ;
+
 
 
     demodulation_line #(.R(14), .RT(5)) i_demodulation_line_cos_A (
@@ -792,8 +790,8 @@ module lock(
         .ref(cos_B), 
 
         // config
-        .tau1(lpf_X_A), 
-        .tau2(lpf_X_B),
+        .tau1(lpf_F1_A), 
+        .tau2(lpf_F1_B),
         .amp(sg_amp1),
 
         // output
@@ -808,8 +806,8 @@ module lock(
         .ref(sin_B), 
 
         // config
-        .tau1(lpf_X_A), 
-        .tau2(lpf_X_B),
+        .tau1(lpf_F1_A), 
+        .tau2(lpf_F1_B),
         .amp(sg_amp1),
 
         // output
@@ -817,75 +815,6 @@ module lock(
         .out_hr(Y2_28)
     );
 
-
-    // signal_i multiplied by reference signal
-
-    // wire signed [28-1:0] sin_ref_mult_tmp_28, cos_ref_mult_tmp_28; // this is for amplitud enhancement
-
-    // mult_dsp_14  i_mult_dps_sin_ref (.CLK(clk), .A($signed(sin_ref)) , .B(signal_i), .P(sin_ref_mult_tmp_28));
-    // mult_dsp_14  i_mult_dps_cos_ref (.CLK(clk), .A($signed(cos_ref)) , .B(signal_i), .P(cos_ref_mult_tmp_28));
-    // mult_dsp_14  i_mult_dps_cos_1f  (.CLK(clk), .A($signed(cos_1f )) , .B(signal_i), .P(cos_1f_mult ));
-    // mult_dsp_14  i_mult_dps_cos_2f  (.CLK(clk), .A($signed(cos_2f )) , .B(signal_i), .P(cos_2f_mult ));
-    // mult_dsp_14  i_mult_dps_cos_3f  (.CLK(clk), .A($signed(cos_3f )) , .B(signal_i), .P(cos_3f_mult ));
-
-    // assign sin_ref_mult = sin_ref_mult_tmp_28 <<< 4'd10 ; // this is for amplitud enhancement
-    // assign cos_ref_mult = cos_ref_mult_tmp_28 <<< 4'd10 ;
-
-    // // multiplied signal " "_mult goes in LPF_?_A
-    // LP_filter3 #(.R(38)) i_LP_filter_sin_ref_A (.clk(clk), .rst(rst), .tau( lpf_X_A   ), .in( sin_ref_mult ), .out( sin_ref_lpf1 ) );
-    // LP_filter3 #(.R(38)) i_LP_filter_cos_ref_A (.clk(clk), .rst(rst), .tau( lpf_Y_A   ), .in( cos_ref_mult ), .out( cos_ref_lpf1 ) );
-    // LP_filter3 #(.R(28)) i_LP_filter_cos_1f_A  (.clk(clk), .rst(rst), .tau( lpf_F1_A  ), .in( cos_1f_mult  ), .out( cos_1f_lpf1  ) );
-    // LP_filter3 #(.R(28)) i_LP_filter_cos_2f_A  (.clk(clk), .rst(rst), .tau( lpf_F2_A  ), .in( cos_2f_mult  ), .out( cos_2f_lpf1  ) );
-    // LP_filter3 #(.R(28)) i_LP_filter_cos_3f_A  (.clk(clk), .rst(rst), .tau( lpf_F3_A  ), .in( cos_3f_mult  ), .out( cos_3f_lpf1  ) );
-
-
-    // // LPF_A goes into LPF_?_B
-    // LP_filter3 #(.R(38)) i_LP_filter_sin_ref_B (.clk(clk), .rst(rst), .tau( lpf_X_B   ), .in( sin_ref_lpf1 ), .out( sin_ref_lpf2 ) );
-    // LP_filter3 #(.R(38)) i_LP_filter_cos_ref_B (.clk(clk), .rst(rst), .tau( lpf_Y_B   ), .in( cos_ref_lpf1 ), .out( cos_ref_lpf2 ) );
-    // LP_filter3 #(.R(28)) i_LP_filter_cos_1f_B  (.clk(clk), .rst(rst), .tau( lpf_F1_B  ), .in( cos_1f_lpf1  ), .out( cos_1f_lpf2  ) );
-    // LP_filter3 #(.R(28)) i_LP_filter_cos_2f_B  (.clk(clk), .rst(rst), .tau( lpf_F2_B  ), .in( cos_2f_lpf1  ), .out( cos_2f_lpf2  ) );
-    // LP_filter3 #(.R(28)) i_LP_filter_cos_3f_B  (.clk(clk), .rst(rst), .tau( lpf_F3_B  ), .in( cos_3f_lpf1  ), .out( cos_3f_lpf2  ) );
-
-
-    // //wire signed [37-1:0] Xo_37,Yo_37,X2o_37,Y2o_37,F3o_37;
-    // // wire signed [47-1:0] Xo_47,Yo_47;
-    // wire signed [53-1:0] Xo_53,Yo_53;
-    // //wire signed [37-1:0] X2o_37,Y2o_37,F3o_37;
-    // wire signed [43-1:0] X2o_43,Y2o_43,F3o_43;
-
-    // //wire signed [28-1:0] Xo_28,Yo_28,X2o_28,Y2o_28,F3o_28;
-    // wire signed [38-1:0] Xo_38,Yo_38;
-    // wire signed [28-1:0] X2o_28,Y2o_28,F3o_28;
-
-    // assign X_28   = cos_ref_lpf2 >>> 4'd10 ;
-    // assign Y_28   = sin_ref_lpf2 >>> 4'd10 ;
-    // assign F1_28  = cos_1f_lpf2  ;
-    // assign F2_28  = cos_2f_lpf2  ;
-    // assign F3_28  = cos_3f_lpf2  ;
-
-
-
-    // assign Xo_53    = ( cos_ref_lpf2   <<< sg_amp0  );
-    // assign Yo_53    = ( sin_ref_lpf2   <<< sg_amp0  );
-    // assign X2o_43   = ( F1_28  <<< sg_amp1  );
-    // assign Y2o_43   = ( F2_28  <<< sg_amp2  );
-    // assign F3o_43   = ( F3_28  <<< sg_amp3  );
-
-
-
-
-    // satprotect #(.Ri(47),.Ro(38),.SAT(38)) i_satprotect_Xo_47   ( .in( Xo_47  ), .out( Xo_38  ) );
-    // satprotect #(.Ri(47),.Ro(38),.SAT(38)) i_satprotect_Yo_47   ( .in( Yo_47  ), .out( Yo_38  ) );
-    // satprotect #(.Ri(37),.Ro(28),.SAT(28)) i_satprotect_X2o_37  ( .in( X2o_37 ), .out( X2o_28 ) );
-    // satprotect #(.Ri(37),.Ro(28),.SAT(28)) i_satprotect_Y2o_37  ( .in( Y2o_37 ), .out( Y2o_28 ) );
-    // satprotect #(.Ri(37),.Ro(28),.SAT(28)) i_satprotect_F3o_37  ( .in( F3o_37 ), .out( F3o_28 ) );
-
-
-    // satprotect2 #(.Ri(53),.Ro(38)) i_satprotect_Xo_53   ( .in( Xo_53  ), .out( Xo_38  ) );
-    // satprotect2 #(.Ri(53),.Ro(38)) i_satprotect_Yo_53   ( .in( Yo_53  ), .out( Yo_38  ) );
-    // satprotect2 #(.Ri(43),.Ro(28)) i_satprotect_X2o_43  ( .in( X2o_43 ), .out( X2o_28 ) );
-    // satprotect2 #(.Ri(43),.Ro(28)) i_satprotect_Y2o_43  ( .in( Y2o_43 ), .out( Y2o_28 ) );
-    // satprotect2 #(.Ri(43),.Ro(28)) i_satprotect_F3o_43  ( .in( F3o_43 ), .out( F3o_28 ) );
 
 
 

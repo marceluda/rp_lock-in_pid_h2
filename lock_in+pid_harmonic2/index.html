@@ -16,7 +16,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TWO Harmonic lock-in+PID (v0.3.9)</title>
+  <title>TWO Harmonic lock-in+PID (v0.4.0)</title>
   <link href="../assets/bootstrap-3.0.0/css/bootstrap.css" rel="stylesheet" type="text/css">
   <link href="../assets/style.css?6" rel="stylesheet" type="text/css">
   <script src="../assets/bootstrap-3.0.0/js/jquery.js"></script>
@@ -58,6 +58,10 @@
   var xdecimal_places = 2;               // Number of decimal places for the xmin/xmax values. Maximum supported are 12.
   var trigger_level_xdecimal_places = 4; // Number of decimal places for trigger level tooltip
   var range_offset = 1;                  // Percentages
+
+  var last_get_failed = false;
+  var get_fail_count = 0;           // Contador de fallos consecutivos
+  var MAX_CONSECUTIVE_FAILS = 3;    // Número de fallos permitidos antes de mostrar modal
 
   var xmin = -1000000;
   var xmax =  1000000;
@@ -2701,19 +2705,32 @@
       }
     })
     .fail(function(jqXHR, textStatus, errorThrown) {
-      if(last_get_failed) {
-        if(window.location.href[0]!='f')
-          showModalError('Data receiving failed.<br>Error status: ' + textStatus, true, true);
-        last_get_failed = false;
-      }
-      else {
+      // Incrementar contador de fallos
+      get_fail_count++;
+      
+      // Solo mostrar modal después de varios fallos consecutivos
+      if(get_fail_count >= MAX_CONSECUTIVE_FAILS) {
+        if(last_get_failed) {
+          if(window.location.href[0]!='f')
+            showModalError('Data receiving failed after ' + get_fail_count + ' consecutive attempts.<br>Error status: ' + textStatus, true, true);
+          last_get_failed = false;
+        }
+        else {
+          last_get_failed = true;
+          downloading = false;
+          updateGraphData();  // One more try
+        }
+      } else {
+        // Solo reintentar sin mostrar modal
+        console.log('Request failed (attempt ' + get_fail_count + ' of ' + MAX_CONSECUTIVE_FAILS + '): ' + textStatus);
         last_get_failed = true;
         downloading = false;
-        updateGraphData();  // One more try
+        updateGraphData();  // Reintentar
       }
     })
     .always(function() {
       if(! last_get_failed) {
+        get_fail_count = 0;  // Resetear contador al recibir datos correctamente
         downloading = false;
 
         if(params.local) {
@@ -3225,7 +3242,8 @@
       }
     })
     .fail(function() {
-      showModalError('Error while sending data (E3).', false, true, true);
+      // showModalError('Error while sending data (E3).', false, true, true);
+      showToast('Error while sending data (E3). The sent params were PROBABLY not applied.', 'error');
     })
     .always(function() {
       sending = false;
@@ -4287,7 +4305,49 @@
   }
 
 
+  // Toast notification system
+  var toastTimeout = null;
+  var currentToast = null;
+
+  function showToast(message, type, duration = 5000) {
+      // Remover toast existente
+      if (currentToast) {
+          currentToast.remove();
+          if (toastTimeout) clearTimeout(toastTimeout);
+      }
+      
+      // Crear nuevo toast
+      currentToast = $('<div class="toast-notification ' + type + '">' +
+          '<span>' + message + '</span>' +
+          '<button class="close-toast">&times;</button>' +
+          '</div>');
+      
+      $('body').append(currentToast);
+      currentToast.fadeIn(200);
+      
+      // Botón de cerrar
+      currentToast.find('.close-toast').on('click', function() {
+          hideToast();
+      });
+      
+      // Auto-cerrar después de duración
+      toastTimeout = setTimeout(function() {
+          hideToast();
+      }, duration);
+  }
+
+  function hideToast() {
+      if (currentToast) {
+          currentToast.animate({ opacity: 0 }, 300, function() {
+              currentToast.remove();
+              currentToast = null;
+          });
+          if (toastTimeout) clearTimeout(toastTimeout);
+      }
+  }
+
   </script>
+  
   <script src="../assets/redpitaya.custom.js"></script>
 </head>
 <body>
@@ -4295,7 +4355,7 @@
     <div class="container">
       <a id="btn_exit" class="pull-left" href="/index.html"><span class="glyphicon glyphicon-chevron-left" title="Exit" alt="Exit"></span></a>
       <img class="logo pull-left" src="../assets/images/logo_white.png">
-      <h2 class="page-title">Harmonic lock-in+PID (v0.3.9)</h2>
+      <h2 class="page-title">TWO Harmonic lock-in[+PID] (v0.4.0)</h2>
     </div>
   </div>
   <div class="container">

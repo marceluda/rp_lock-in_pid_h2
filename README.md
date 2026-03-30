@@ -22,13 +22,7 @@ Video from lock-in+PID Harmonic version:
 - Remote control through HTTP API
  
 
-**New Interface for lock-in R & Phase** :
-
-
-[![New iface](http://img.youtube.com/vi/DzSK8IQkUE4/0.jpg)](http://www.youtube.com/watch?v=DzSK8IQkUE4 "R-phase interphase")
-
 **More decimaion values**
-
 
 | dec    | max oscilloscope lenght |
 |--------|-------------------------|
@@ -59,7 +53,7 @@ https://marceluda.github.io/rp_lock-in_pid/TheApp/install/
 
 # Development
 
-To build of modify the App you need a linux development environment with:
+To build or modify the App you need a linux development environment with:
   - Vivado 2015.2
   - gcc-linaro-4.9-2015.02-3-x86_64_arm-linux-gnueabihf (installed on `/opt/linaro/gcc-linaro-4.9-2015.02-3-x86_64_arm-linux-gnueabihf/`)
 
