@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 read file created with:
-    /opt/redpitaya/www/apps/lock_in+pid_harmonic/py/data_dump_file.py
+    /opt/redpitaya/www/apps/lock_in+pid_harmonic2/py/data_dump_file.py
 """
 
 

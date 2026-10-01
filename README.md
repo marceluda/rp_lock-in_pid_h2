@@ -1,14 +1,17 @@
-# Red Pitaya Lock-in+PID Application with HARMONIC modulation
+# Red Pitaya Lock-in+PID Application with HARMONIC modulation with TWO demodulation channels
 
-This started being a striped version of [lock-in+PID](https://github.com/marceluda/rp_lock-in_pid) project. Now it incorporated some new features that make it another App.
 
+This project is based in [lock-in+PID Harmonic](https://github.com/marceluda/rp_lock-in_pid_h)
+
+
+Video from lock-in+PID Harmonic version:
 
 [![Example of usage](http://img.youtube.com/vi/330eYE75MYQ/0.jpg)](http://www.youtube.com/watch?v=330eYE75MYQ "Fast demosatration of usage")
 
 
 ## Features
 
-- Lock-in amplifier
+- **TWO** Lock-in amplifier
 - in-phase and quadrature Demodulation
   - Demodulation for arbitrary phase
   - Demodulatión for double and triple frequency
@@ -19,13 +22,7 @@ This started being a striped version of [lock-in+PID](https://github.com/marcelu
 - Remote control through HTTP API
  
 
-**New Interface for lock-in R & Phase** :
-
-
-[![New iface](http://img.youtube.com/vi/DzSK8IQkUE4/0.jpg)](http://www.youtube.com/watch?v=DzSK8IQkUE4 "New R-phase interphase")
-
 **More decimaion values**
-
 
 | dec    | max oscilloscope lenght |
 |--------|-------------------------|
@@ -47,7 +44,7 @@ This is an application built for the [Red Pitaya STEMlab 125-14](https://www.red
 The board is closed-hardware and open-software. You can buy the board and build your own software.
 
 If you have a RP board you can install the **Lock-in+PID** application
-by copying the `lock_in+pid_harmonic` folder (that comes with this tar/zip file) to the
+by copying the `lock_in+pid_harmonic2` folder (that comes with this tar/zip file) to the
 `/opt/redpitaya/www/apps` folder (inside the RP).
 
 For more information about installing procedure, refer to:
@@ -56,7 +53,7 @@ https://marceluda.github.io/rp_lock-in_pid/TheApp/install/
 
 # Development
 
-To build of modify the App you need a linux development environment with:
+To build or modify the App you need a linux development environment with:
   - Vivado 2015.2
   - gcc-linaro-4.9-2015.02-3-x86_64_arm-linux-gnueabihf (installed on `/opt/linaro/gcc-linaro-4.9-2015.02-3-x86_64_arm-linux-gnueabihf/`)
 
@@ -74,18 +71,21 @@ You will need the following to build the Red Pitaya components:
 sudo apt-get install make u-boot-tools curl xz-utils nano
 ```
 
-2. Xilinx [Vivado 2015.2](http://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/vivado-design-tools/2015-2.html) FPGA development tools. The SDK (bare metal toolchain) must also be installed, be careful during the install process to select it. Preferably use the default install location.
+2. a. Xilinx [Vivado 2015.2](https://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/vivado-design-tools/archive.html) FPGA development tools. The SDK (bare metal toolchain) must also be installed, be careful during the install process to select it. Preferably use the default install location.
+
+2. b. The new OS version 2.0 requires a command that is included in more recent version of Vivado: Xilinx [Vivado 2020.1](https://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/vivado-design-tools/archive.html). More info in [Red Pitaya documentation](https://redpitaya-knowledge-base.readthedocs.io/en/latest/learn_fpga/3_vivado_env/tutorfpga1.html)
 
 3. Linaro [ARM toolchain](https://releases.linaro.org/14.11/components/toolchain/binaries/arm-linux-gnueabihf/) for cross compiling Linux applications. We recommend to install it to `/opt/linaro/` since build process instructions relly on it.
 
 ```bash
-TOOLCHAIN="http://releases.linaro.org/14.11/components/toolchain/binaries/arm-linux-gnueabihf/gcc-linaro-4.9-2014.11-x86_64_arm-linux-gnueabihf.tar.xz"
-#TOOLCHAIN="http://releases.linaro.org/15.02/components/toolchain/binaries/arm-linux-gnueabihf/gcc-linaro-4.9-2015.02-3-x86_64_arm-linux-gnueabihf.tar.xz"
+# TOOLCHAIN="http://releases.linaro.org/14.11/components/toolchain/binaries/arm-linux-gnueabihf/gcc-linaro-4.9-2014.11-x86_64_arm-linux-gnueabihf.tar.xz"
+TOOLCHAIN="http://releases.linaro.org/15.02/components/toolchain/binaries/arm-linux-gnueabihf/gcc-linaro-4.9-2015.02-3-x86_64_arm-linux-gnueabihf.tar.xz"
 curl -O $TOOLCHAIN
 sudo mkdir -p /opt/linaro
 sudo chown $USER:$USER /opt/linaro
 tar -xpf *linaro*.tar.xz -C /opt/linaro
 ```
+
 
 **NOTE:** you can skip installing Vivado tools, if you only wish to compile user space software.
 
@@ -105,7 +105,7 @@ sudo apt-get install libx32gcc-4.8-dev
 sudo apt-get install libc6-dev-i386
 ```
 
-The building was tested on Ubuntu 16.04 Linux x86_64 
+The building was tested on Ubuntu 24.04.02 Linux x86_64 
 
 
 ## Building
@@ -119,7 +119,7 @@ source settings.sh
 make
 ```
 
-Or form App folder `lock_in_mtm` :
+Or form App folder `lock_in+pid_harmonic2` :
 
 ```bash
 source ../settings.sh
@@ -166,5 +166,5 @@ UnZip / UnTar the App folder. Execute from terminal:
 
 Replace `rp-XXXXXX.local` by your RP localname or IP address
 
-Also, you can use your own SSH client and upload the lock_in+pid_harmonic folder the the
+Also, you can use your own SSH client and upload the `lock_in+pid_harmonic2` folder the the
 RedPiaya folder: `/opt/redpitaya/www/apps`

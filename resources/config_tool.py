@@ -36,10 +36,10 @@ from datetime import datetime
 
 PWD = os.environ['PWD']
 
-if PWD.find('rp_lock-in_pid_h')>0:
-    folder = PWD[:PWD.find('rp_lock-in_pid_h')+len('rp_lock-in_pid_h')]
+if PWD.find('rp_lock-in_pid_h2')>0:
+    folder = PWD[:PWD.find('rp_lock-in_pid_h2')+len('rp_lock-in_pid_h2')]
 
-APP='lock_in+pid_harmonic'
+APP='lock_in+pid_harmonic2'
 
 if __name__ == "__main__":
 
@@ -190,6 +190,9 @@ f.add( name="sf_config"          , group=grp , val=    0, rw=True ,  nbits= 5, m
 grp='lock-in'
 f.add( name="signal_sw"          , group=grp , val=    0, rw=True ,  nbits= 3, min_val=          0, max_val=          7, fpga_update=True , signed=False, desc="Input selector for signal_i" )
 f.add( name="signal_i"           , group=grp , val=    0, rw=False,  nbits=14, min_val=      -8192, max_val=       8191, fpga_update=False, signed=True , desc="signal for demodulation" )
+f.add( name="signal2_sw"         , group=grp , val=    0, rw=True ,  nbits= 3, min_val=          0, max_val=          7, fpga_update=True , signed=False, desc="Input selector for signal2_i" )
+f.add( name="signal2_i"          , group=grp , val=    0, rw=False,  nbits=14, min_val=      -8192, max_val=       8191, fpga_update=False, signed=True , desc="signal2 for demodulation" )
+
 f.add( name="sg_amp0"            , group=grp , val=    0, rw=True ,  nbits= 5, min_val=          0, max_val=         31, fpga_update=True , signed=False, desc="amplification of Xo, Yo" )
 f.add( name="sg_amp1"            , group=grp , val=    0, rw=True ,  nbits= 4, min_val=          0, max_val=         15, fpga_update=True , signed=False, desc="amplification F1o" )
 f.add( name="sg_amp2"            , group=grp , val=    0, rw=True ,  nbits= 4, min_val=          0, max_val=         15, fpga_update=True , signed=False, desc="amplification of F2o" )
@@ -213,7 +216,8 @@ f.add( name="mod_out2"         , group=grp , val=   -1, rw=True ,  nbits=14, min
 
 # Modulation Generator
 grp='gen_mod'
-f.add( name="gen_mod_phase"      , group=grp , val=    0, rw=True ,  nbits=12, min_val=          0, max_val=       2519, fpga_update=True , signed=False, desc="phase relation of cos_?f signals" )
+f.add( name="gen_mod_phase_A"      , group=grp , val=    0, rw=True ,  nbits=12, min_val=          0, max_val=       2519, fpga_update=True , signed=False, desc="phase relation of cos_?f signals" )
+f.add( name="gen_mod_phase_B"      , group=grp , val=    0, rw=True ,  nbits=12, min_val=          0, max_val=       2519, fpga_update=True , signed=False, desc="phase relation of cos_?f signals" )
 f.add( name="gen_mod_hp"         , group=grp , val=    0, rw=True ,  nbits=14, min_val=          0, max_val=      16383, fpga_update=True , signed=False, desc="harmonic period set" )
 
 # Ramp control
@@ -233,11 +237,11 @@ f.add( name="ramp_B_factor"      , group=grp , val= 4096, rw=True ,  nbits=14, m
 
 # Modulation Signals
 grp='modulation'
-f.add( name="sin_ref"            , group=grp , val=    0, rw=False,  nbits=14, min_val=      -8192, max_val=       8191, fpga_update=True , signed=True , desc="lock-in modulation sinus harmonic reference" )
-f.add( name="cos_ref"            , group=grp , val=    0, rw=False,  nbits=14, min_val=      -8192, max_val=       8191, fpga_update=True , signed=True , desc="lock-in modulation cosinus harmonic reference" )
-f.add( name="cos_1f"             , group=grp , val=    0, rw=False,  nbits=14, min_val=      -8192, max_val=       8191, fpga_update=True , signed=True , desc="lock-in modulation sinus harmonic signal with phase relation to reference" )
-f.add( name="cos_2f"             , group=grp , val=    0, rw=False,  nbits=14, min_val=      -8192, max_val=       8191, fpga_update=True , signed=True , desc="lock-in modulation sinus harmonic signal with phase relation to reference and double frequency" )
-f.add( name="cos_3f"             , group=grp , val=    0, rw=False,  nbits=14, min_val=      -8192, max_val=       8191, fpga_update=True , signed=True , desc="lock-in modulation sinus harmonic signal with phase relation to reference and triple frequency" )
+f.add( name="cos_ref"            , group=grp , val=    0, rw=False,  nbits=14, min_val=      -8192, max_val=       8191, fpga_update=True , signed=True , desc="lock-in modulation sinus harmonic reference" )
+f.add( name="cos_A"              , group=grp , val=    0, rw=False,  nbits=14, min_val=      -8192, max_val=       8191, fpga_update=True , signed=True , desc="lock-in modulation cosinus harmonic reference" )
+f.add( name="sin_A"              , group=grp , val=    0, rw=False,  nbits=14, min_val=      -8192, max_val=       8191, fpga_update=True , signed=True , desc="lock-in modulation sinus harmonic signal with phase relation to reference" )
+f.add( name="cos_B"              , group=grp , val=    0, rw=False,  nbits=14, min_val=      -8192, max_val=       8191, fpga_update=True , signed=True , desc="lock-in modulation sinus harmonic signal with phase relation to reference and double frequency" )
+f.add( name="sin_B"              , group=grp , val=    0, rw=False,  nbits=14, min_val=      -8192, max_val=       8191, fpga_update=True , signed=True , desc="lock-in modulation sinus harmonic signal with phase relation to reference and triple frequency" )
 
 # Other signals
 grp='inout'
@@ -255,8 +259,8 @@ f.add( name="oscB"               , group=grp , val=    0, rw=False,  nbits=14, m
 grp='product_signals'
 f.add( name="X_28"               , group=grp , val=    0, rw=False,  nbits=28, min_val= -134217728, max_val=  134217727, fpga_update=True , signed=True , desc="Demodulated signal from sin_ref" )
 f.add( name="Y_28"               , group=grp , val=    0, rw=False,  nbits=28, min_val= -134217728, max_val=  134217727, fpga_update=True , signed=True , desc="Demodulated signal from cos_ref" )
-f.add( name="F1_28"              , group=grp , val=    0, rw=False,  nbits=28, min_val= -134217728, max_val=  134217727, fpga_update=True , signed=True , desc="Demodulated signal from cos_1f" )
-f.add( name="F2_28"              , group=grp , val=    0, rw=False,  nbits=28, min_val= -134217728, max_val=  134217727, fpga_update=True , signed=True , desc="Demodulated signal from cos_2f" )
+f.add( name="X2_28"              , group=grp , val=    0, rw=False,  nbits=28, min_val= -134217728, max_val=  134217727, fpga_update=True , signed=True , desc="Demodulated signal from cos_1f" )
+f.add( name="Y2_28"              , group=grp , val=    0, rw=False,  nbits=28, min_val= -134217728, max_val=  134217727, fpga_update=True , signed=True , desc="Demodulated signal from cos_2f" )
 f.add( name="F3_28"              , group=grp , val=    0, rw=False,  nbits=28, min_val= -134217728, max_val=  134217727, fpga_update=True , signed=True , desc="Demodulated signal from cos_3f" )
 f.add( name="cnt_clk"            , group=grp , val=    0, rw=False,  nbits=32, min_val=          0, max_val= 4294967295, fpga_update=False, signed=False, desc="Clock count" )
 f.add( name="cnt_clk2"           , group=grp , val=    0, rw=False,  nbits=32, min_val=          0, max_val= 4294967295, fpga_update=False, signed=False, desc="Clock count" )
@@ -325,8 +329,8 @@ for i in ['osc_ctrl','in1','in2','out1','out2']:
     f[i].write_def=False
 
 # Set read-only to same registers
-for i in ['X_28', 'Y_28', 'F1_28', 'F2_28', 'F3_28',
-          'error', 'ctrl_A', 'ctrl_B','signal_i']:
+for i in ['X_28', 'Y_28', 'X2_28', 'Y2_28', 'F3_28',
+          'error', 'ctrl_A', 'ctrl_B','signal_i','signal2_i']:
     f[i].reg_read=True
 
 
@@ -753,8 +757,10 @@ r=f["sf_config"            ]; r.c_update='(((int)params[{:s}].value) << 4 ) +(((
 
 
 # group: lock-in
-m.add( name="lock_signal_sw"     , fpga_reg="signal_sw"     , val=0    , rw=True , nbits=3 , min_val=0         , max_val=7        , fpga_update=True , signed=False, group="lock-in"        , desc="Input selector for signal_i")
+m.add( name="lock_signal_sw"     , fpga_reg="signal_sw"     , val=0    , rw=True , nbits=3 , min_val=0         , max_val=7         , fpga_update=True , signed=False, group="lock-in"        , desc="Input selector for signal_i")
 m.add( name="lock_signal_i"      , fpga_reg="signal_i"      , val=0    , rw=False, nbits=14, min_val=-8192     , max_val=8191      , fpga_update=False, signed=True , group="lock-in"        , desc="signal for demodulation")
+m.add( name="lock_signal2_sw"    , fpga_reg="signal2_sw"    , val=0    , rw=True , nbits=3 , min_val=0         , max_val=7         , fpga_update=True , signed=False, group="lock-in"        , desc="Input selector for signal2_i")
+m.add( name="lock_signal2_i"     , fpga_reg="signal2_i"     , val=0    , rw=False, nbits=14, min_val=-8192     , max_val=8191      , fpga_update=False, signed=True , group="lock-in"        , desc="signal2 for demodulation")
 m.add( name="lock_sg_amp0"       , fpga_reg="sg_amp0"       , val=0    , rw=True , nbits=5 , min_val=0         , max_val=31        , fpga_update=True , signed=False, group="lock-in"        , desc="amplification of Xo, Yo")
 m.add( name="lock_sg_amp1"       , fpga_reg="sg_amp1"       , val=0    , rw=True , nbits=4 , min_val=0         , max_val=15        , fpga_update=True , signed=False, group="lock-in"        , desc="amplification of F1o")
 m.add( name="lock_sg_amp2"       , fpga_reg="sg_amp2"       , val=0    , rw=True , nbits=4 , min_val=0         , max_val=15        , fpga_update=True , signed=False, group="lock-in"        , desc="amplification of F2o")
@@ -799,7 +805,8 @@ m.add( name="lock_mod_out1"           , fpga_reg="mod_out1"           , val=-1  
 m.add( name="lock_mod_out2"           , fpga_reg="mod_out2"           , val=-1   , rw=True , nbits=14, min_val=-1      , max_val=8191      , fpga_update=True , signed=True , group="lock-in"        , desc="Modulation amplitud for out2")
 
 # group: gen_mod
-m.add( name="lock_gen_mod_phase" , fpga_reg="gen_mod_phase" , val=0    , rw=True , nbits=12, min_val=0         , max_val=2519      , fpga_update=True , signed=False, group="gen_mod"        , desc="phase relation of cos_?f signals")
+m.add( name="lock_gen_mod_phase_A" , fpga_reg="gen_mod_phase_A" , val=0    , rw=True , nbits=12, min_val=0         , max_val=2519      , fpga_update=True , signed=False, group="gen_mod"        , desc="phase relation of cos_?f signals")
+m.add( name="lock_gen_mod_phase_B" , fpga_reg="gen_mod_phase_B" , val=0    , rw=True , nbits=12, min_val=0         , max_val=2519      , fpga_update=True , signed=False, group="gen_mod"        , desc="phase relation of cos_?f signals")
 m.add( name="lock_gen_mod_hp"    , fpga_reg="gen_mod_hp"    , val=0    , rw=True , nbits=14, min_val=0         , max_val=16383     , fpga_update=True , signed=False, group="gen_mod"        , desc="harmonic period set")
 
 # group: gen_ramp
@@ -815,12 +822,11 @@ m.add( name="lock_ramp_sawtooth" , fpga_reg="ramp_sawtooth" , val=0    , rw=True
 m.add( name="lock_ramp_B_factor" , fpga_reg="ramp_B_factor" , val= 4096, rw=True , nbits=14, min_val=-4096     , max_val=4096      , fpga_update=True , signed=True , group="gen_ramp"       , desc="proportional factor ramp_A/ramp_B.\nramp_B=ramp_A*ramp_B_factor/4096")
 
 # group: modulation
-m.add( name="lock_sin_ref"       , fpga_reg="sin_ref"       , val=0    , rw=False, nbits=14, min_val=-8192     , max_val=8191      , fpga_update=False, signed=True , group="modulation"     , desc="lock-in modulation sinus harmonic reference")
-m.add( name="lock_cos_ref"       , fpga_reg="cos_ref"       , val=0    , rw=False, nbits=14, min_val=-8192     , max_val=8191      , fpga_update=False, signed=True , group="modulation"     , desc="lock-in modulation cosinus harmonic reference")
-m.add( name="lock_cos_1f"        , fpga_reg="cos_1f"        , val=0    , rw=False, nbits=14, min_val=-8192     , max_val=8191      , fpga_update=False, signed=True , group="modulation"     , desc="lock-in modulation sinus harmonic signal with phase relation to reference")
-m.add( name="lock_cos_2f"        , fpga_reg="cos_2f"        , val=0    , rw=False, nbits=14, min_val=-8192     , max_val=8191      , fpga_update=False, signed=True , group="modulation"     , desc="lock-in modulation sinus harmonic signal with phase relation to reference and double frequency")
-m.add( name="lock_cos_3f"        , fpga_reg="cos_3f"        , val=0    , rw=False, nbits=14, min_val=-8192     , max_val=8191      , fpga_update=False, signed=True , group="modulation"     , desc="lock-in modulation sinus harmonic signal with phase relation to reference and triple frequency")
-
+m.add( name="lock_cos_ref"       , fpga_reg="cos_ref"       , val=0    , rw=False, nbits=14, min_val=-8192     , max_val=8191      , fpga_update=False, signed=True , group="modulation"     , desc="lock-in modulation sinus harmonic reference")
+m.add( name="lock_cos_A"         , fpga_reg="cos_A"         , val=0    , rw=False, nbits=14, min_val=-8192     , max_val=8191      , fpga_update=False, signed=True , group="modulation"     , desc="lock-in modulation cosinus harmonic reference")
+m.add( name="lock_sin_A"         , fpga_reg="sin_A"         , val=0    , rw=False, nbits=14, min_val=-8192     , max_val=8191      , fpga_update=False, signed=True , group="modulation"     , desc="lock-in modulation sinus harmonic signal with phase relation to reference")
+m.add( name="lock_cos_B"         , fpga_reg="cos_B"         , val=0    , rw=False, nbits=14, min_val=-8192     , max_val=8191      , fpga_update=False, signed=True , group="modulation"     , desc="lock-in modulation sinus harmonic signal with phase relation to reference and double frequency")
+m.add( name="lock_sin_B"         , fpga_reg="sin_B"         , val=0    , rw=False, nbits=14, min_val=-8192     , max_val=8191      , fpga_update=False, signed=True , group="modulation"     , desc="lock-in modulation sinus harmonic signal with phase relation to reference and triple frequency")
 
 # group: inout
 m.add( name="lock_in1"           , fpga_reg="in1"           , val=0    , rw=False, nbits=14, min_val=-8192     , max_val=8191      , fpga_update=False, signed=True , group="inout"          , desc="Input signal IN1")
@@ -833,8 +839,8 @@ m.add( name="lock_oscB"          , fpga_reg="oscB"          , val=0    , rw=Fals
 # group: product_signals
 m.add( name="lock_X_28"         , fpga_reg="X_28"         , val=0    , rw=False, nbits=28, min_val=-134217728, max_val=134217727 , fpga_update=False, signed=True , group="product_signals", desc="Demodulated signal from sin_ref")
 m.add( name="lock_Y_28"         , fpga_reg="Y_28"         , val=0    , rw=False, nbits=28, min_val=-134217728, max_val=134217727 , fpga_update=False, signed=True , group="product_signals", desc="Demodulated signal from cos_ref")
-m.add( name="lock_F1_28"         , fpga_reg="F1_28"         , val=0    , rw=False, nbits=28, min_val=-134217728, max_val=134217727 , fpga_update=False, signed=True , group="product_signals", desc="Demodulated signal from cos_1f")
-m.add( name="lock_F2_28"         , fpga_reg="F2_28"         , val=0    , rw=False, nbits=28, min_val=-134217728, max_val=134217727 , fpga_update=False, signed=True , group="product_signals", desc="Demodulated signal from cos_2f")
+m.add( name="lock_X2_28"         , fpga_reg="X2_28"         , val=0    , rw=False, nbits=28, min_val=-134217728, max_val=134217727 , fpga_update=False, signed=True , group="product_signals", desc="Demodulated signal from cos_1f")
+m.add( name="lock_Y2_28"         , fpga_reg="Y2_28"         , val=0    , rw=False, nbits=28, min_val=-134217728, max_val=134217727 , fpga_update=False, signed=True , group="product_signals", desc="Demodulated signal from cos_2f")
 m.add( name="lock_F3_28"         , fpga_reg="F3_28"         , val=0    , rw=False, nbits=28, min_val=-134217728, max_val=134217727 , fpga_update=False, signed=True , group="product_signals", desc="Demodulated signal from cos_3f")
 m.add( name="lock_cnt_clk"       , fpga_reg="cnt_clk"       , val=0    , rw=False, nbits=32, min_val=0          , max_val=4294967295, fpga_update=False, signed=False, group="product_signals", desc="Clock count")
 m.add( name="lock_cnt_clk2"      , fpga_reg="cnt_clk2"      , val=0    , rw=False, nbits=32, min_val=0          , max_val=4294967295, fpga_update=False, signed=False, group="product_signals", desc="Clock count")
@@ -1401,7 +1407,9 @@ h['lock_mod_out2'                 ].type = 'number'
 
 
 
-h['lock_gen_mod_phase'            ].type = 'number'
+h['lock_gen_mod_phase_A'            ].type = 'number'
+h['lock_gen_mod_phase_B'            ].type = 'number'
+
 
 h['lock_gen_mod_hp'               ].type = 'number'
 
@@ -1726,11 +1734,11 @@ h['lock_stream_cmd'    ].control.text = 'Start'
 def parse_sw(val):
     values=[
              ['in1_m_in2.*','in1-in2'],
-             ['pid(\w)_out.*','PID \\1 out'],
-             ["14'b1?0+\s*",'0'],
-             [".*sq_([a-z]*)_b.*",'square \\1 (bin)'],
-             ['ramp_(\w)','Ramp \\1'],
-             ['error_\w*', 'error']
+             [r'pid(\w)_out.*','PID \\1 out'],
+             [r"14'b1?0+\s*",'0'],
+             [r".*sq_([a-z]*)_b.*",'square \\1 (bin)'],
+             [r'ramp_(\w)','Ramp \\1'],
+             [r'error_\w*', 'error']
          ]
     for i in values:
         if bool(re.match(i[0],val)):
@@ -1749,7 +1757,7 @@ def get_muxer(filename,name):
             lin=line.strip(' \n\t')
             if '//' in lin:
                 lin=lin[0:lin.find('//')]
-            if bool(re.match('.*muxer.*\(',lin)):
+            if bool(re.match(r'.*muxer.*\(',lin)):
                 out=True
             if out:
                 #print(lin)
@@ -1759,7 +1767,7 @@ def get_muxer(filename,name):
                 out=False
                 tmp=''.join(txt)
                 txt=[]
-                if bool(re.match('.*sel *\( *'+name+' *\).*',tmp)):
+                if bool(re.match(r'.*sel *\( *'+name+r' *\).*',tmp)):
                     sel=tmp
                 #txt=[]
         txt=sel.split(')')
@@ -1767,7 +1775,7 @@ def get_muxer(filename,name):
         for i in txt:
             i=i.strip(' \n\t')
             if '.in' in i:
-                ii=re.search('.*\((.*)',i)
+                ii=re.search(r'.*\((.*)',i)
                 ret.append( parse_sw( ii.group(1).strip(' \n\t')  ))
         #print( '["' + '","'.join(ret) + '"]')
         return ret
@@ -1999,8 +2007,8 @@ if True:  # input_select  *************************************************
     txt=('\n'.join(txt))
 
 html_global_configs.append(
-        html_global_config( regex_start = ' *var *switches *= *\[',
-                            regex_end   = '.*\] *;.*',
+        html_global_config( regex_start = r' *var *switches *= *\[',
+                            regex_end   = r'.*\] *;.*',
                             text        =  txt)
         )
 
@@ -2047,8 +2055,8 @@ if True:  # input_number  *************************************************
     txt=('\n'.join(txt))
 
 html_global_configs.append(
-        html_global_config( regex_start = ' *var *input_number *= *\[',
-                            regex_end   = '.*\] *;.*',
+        html_global_config( regex_start = r' *var *input_number *= *\[',
+                            regex_end   = r'.*\] *;.*',
                             text        =  txt)
         )
 
@@ -2095,8 +2103,8 @@ if True:  # LOADPARAMS  *************************************************
     #print(txt)
 
 html_global_configs.append(
-        html_global_config( regex_start = ' *// *\[LOLO DOCK LOADPARAMS\].*',
-                            regex_end   = '.*// *\[LOLO DOCK LOADPARAMS END\].*',
+        html_global_config( regex_start = r' *// *\[LOLO DOCK LOADPARAMS\].*',
+                            regex_end   = r'.*// *\[LOLO DOCK LOADPARAMS END\].*',
                             text        =  txt)
         )
 
@@ -2237,8 +2245,8 @@ if False:
     #print('\n'.join(txt))
 
     py_global_config.append(
-            html_global_config( regex_start = ' *# *\[LOLO DOCK\] *',
-                                regex_end   = ' *# *\[LOLO DOCK END\]',
+            html_global_config( regex_start = r' *# *\[LOLO DOCK\] *',
+                                regex_end   = r' *# *\[LOLO DOCK END\]',
                                 text        = txt )
             )
 
@@ -2270,15 +2278,15 @@ if False:
     #print('\n'.join(txt))
 
     py_global_config.append(
-            html_global_config( regex_start = ' *# *\[LOLOSET DOCK\] *',
-                                regex_end   = ' *# *\[LOLOSET DOCK END\]',
+            html_global_config( regex_start = r' *# *\[LOLOSET DOCK\] *',
+                                regex_end   = r' *# *\[LOLOSET DOCK END\]',
                                 text        = txt )
             )
 
 
 py_global_config.append(
-        html_global_config( regex_start = ' *# *\[REGSET DOCK\] *',
-                            regex_end   = ' *# *\[REGSET DOCK END\]',
+        html_global_config( regex_start = r' *# *\[REGSET DOCK\] *',
+                            regex_end   = r' *# *\[REGSET DOCK END\]',
                             text        = '# [REGSET DOCK]\n'+f.print_hugo(ret=True)+'# [REGSET DOCK END]\n' )
         )
 

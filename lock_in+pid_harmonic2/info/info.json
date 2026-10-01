@@ -1,0 +1,6 @@
+{
+    "name": "Harmonic TWO Lock-in+PID",
+    "version": "0.4.0-BUILD_NUMBER",
+    "revision": "REVISION",
+    "description": "A toolkit application for lock-in and PID implementation. Includes: Oscilloscope, TWO Lock-in with internal modulation generator, Two enhanced PIDs, Ramp generator and control tools."
+}

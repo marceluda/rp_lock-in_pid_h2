@@ -1,0 +1,116 @@
+#
+#
+
+APP=$(notdir $(CURDIR:%/=%))
+
+-include ../_settings.env
+-include ../_build_number
+
+
+# Versioning system
+BUILD_NUMBER ?= 0
+REVISION ?= devbuild
+VER:=$(shell cat info/info.json | grep version | sed -e 's/.*:\ *\"//' | sed -e 's/-.*//')
+
+INSTALL_DIR ?= .
+
+
+CONTROLLERHF   = controllerhf.so
+CONTROLLER_DBG = controllerhf_dbg.so
+CONTROLLER_RLD = controllerhf_rld.so
+
+
+CFLAGS += -DVERSION=$(VER)-$(BUILD_NUMBER) -DREVISION=$(REVISION)
+export CFLAGS
+
+SHELL := /bin/bash
+
+.PHONY: clean clean_fpga clean_app clean_target fpga
+
+all: $(CONTROLLERHF) fpga
+
+$(CONTROLLERHF):
+	$(MAKE) -C src clean
+	$(MAKE) -C src
+	cp src/main.c src/main_$(CONTROLLERHF)_.c
+
+
+app: $(CONTROLLERHF)
+
+fpga: red_pitaya.bit fpga.bit fpga.bit.bin
+
+red_pitaya.bit:
+	cd fpga && $(MAKE) out/red_pitaya.bit
+	cp fpga/out/red_pitaya.bit .
+
+fpga.bit:
+	cp fpga/out/red_pitaya.bit ./fpga.bit
+
+fpga.bit.bin:
+	@( \
+		source /tools/Xilinx/Vivado/2020.1/settings64.sh ;\
+		echo -n "all:{ fpga.bit }" > fpga.bif ;\
+		bootgen -image  fpga.bif -arch zynq -process_bitstream bin ;\
+	)
+
+
+
+target/$(APP): red_pitaya.bit $(CONTROLLERHF) index.html
+	mkdir -p target/$(APP)
+	cp -r $(CONTROLLERHF) c nginx.conf fpga.* info css js py red_pitaya.bit index.html target/$(APP)
+	cp -r upload_app.sh target/
+	cp -r ../resources target/
+	cp ../CHANGELOG.md ../README.md target/
+	mkdir -p target/$(APP)/py
+	sed -i target/$(APP)/info/info.json -e 's/REVISION/$(REVISION)/'
+	sed -i target/$(APP)/info/info.json -e 's/BUILD_NUMBER/$(BUILD_NUMBER)/'
+	sed -i target/$(APP)/index.html -e "s/\(\\s*\)var\\s*app_version\\s*=\\s*'VERSION'\\s*;\\s*/\\1var app_version = '$(VER)-$(BUILD_NUMBER)-$(REVISION)';/"
+
+
+zip: $(CONTROLLERHF) target/$(APP)
+	mkdir -p ../archive
+	cd target; zip -r $(INSTALL_DIR)/$(APP)-$(VER)-$(BUILD_NUMBER)-$(REVISION).zip *
+	mv target/$(APP)-$(VER)-$(BUILD_NUMBER)-$(REVISION).zip ../archive/.
+
+tar: $(CONTROLLERHF) target/$(APP)
+	mkdir -p ../archive
+	cd target; tar -czf $(INSTALL_DIR)/$(APP)-$(VER)-$(BUILD_NUMBER)-$(REVISION).tar.gz *
+	mv target/$(APP)-$(VER)-$(BUILD_NUMBER)-$(REVISION).tar.gz ../archive/.
+
+clean_target:
+	-$(RM) target -rf
+
+clean_app:
+	$(MAKE) -C src clean
+	-$(RM) target -rf
+	-$(RM) *.so
+	echo "BUILD_NUMBER=$$(( $(BUILD_NUMBER) + 1 ))" > ../_build_number
+
+clean_fpga:
+	$(MAKE) -C fpga clean
+	-$(RM) target -rf
+	rm red_pitaya.bit
+	rm fpga.bit
+	rm fpga.bit.bin
+	echo "BUILD_NUMBER=$$(( $BUILD_NUMBER + 1 ))" > ../_build_number
+
+clean: clean_app clean_fpga clean_target
+
+
+
+upload_bit:
+	ssh $(RPIP) $(RPOPTS) "PATH_REDPITAYA=/opt/redpitaya /boot/sbin/rw ; rm /opt/redpitaya/www/apps/$(APP)/red_pitaya.bit; rm /opt/redpitaya/www/apps/$(APP)/fpga.*"
+	scp $(RPSCP) red_pitaya.bit  root@$(RPIP):/opt/redpitaya/www/apps/$(APP)/
+
+upload: target/$(APP)
+	ssh $(RPIP) $(RPOPTS) "PATH_REDPITAYA=/opt/redpitaya /boot/sbin/rw ; rm -rf /opt/redpitaya/www/apps/$(APP) ; mkdir -p /opt/redpitaya/www/apps/$(APP)"
+	cd target/$(APP) ; scp  $(RPSCP) -r controllerhf.so css js py c nginx.conf fpga.* index.html info red_pitaya.bit  root@$(RPIP):/opt/redpitaya/www/apps/$(APP)/
+
+upload_html: target/$(APP)
+	ssh $(RPIP) $(RPOPTS) "PATH_REDPITAYA=/opt/redpitaya /boot/sbin/rw ; rm -rf /opt/redpitaya/www/apps/$(APP)/{index.html,js,css}"
+	cd target/$(APP); scp $(RPSCP) -r index.html css js root@$(RPIP):/opt/redpitaya/www/apps/$(APP)/
+
+upload_py: ./py/hugo.py
+	ssh $(RPIP) $(RPOPTS) "PATH_REDPITAYA=/opt/redpitaya /boot/sbin/rw ; rm -rf /opt/redpitaya/www/apps/$(APP)/py/{data_dump.py,set.py,ver_mem.py,*.py}"
+	scp $(RPSCP) ./py/*.py root@$(RPIP):/opt/redpitaya/www/apps/$(APP)/py/
+	ssh $(RPIP) $(RPOPTS) "PATH_REDPITAYA=/opt/redpitaya /boot/sbin/rw ; chmod +x /opt/redpitaya/www/apps/$(APP)/py/*.py"

@@ -40,7 +40,7 @@ make
 ```bash
 ssh rp-XXXXXX.local -l root
 rw
-cd /opt/redpitaya/www/apps/lock_in+pid_harmonic/c
+cd /opt/redpitaya/www/apps/lock_in+pid_harmonic2/c
 # Modify streaming.c and stream_tcp_osc_cmd.c
 make clean
 make all
@@ -74,7 +74,7 @@ If you want, you can make streaming from the RedPitaya Shell command line. To do
 ```bash
 ssh rp-XXXXXX.local -l root
 rw
-cd /opt/redpitaya/www/apps/lock_in+pid_harmonic/c
+cd /opt/redpitaya/www/apps/lock_in+pid_harmonic2/c
 
 ./stream_tcp_osc_cmd <server_ip> <server_port> <send_min_len>
 
@@ -110,7 +110,7 @@ You can use this by logging into the Red Pitaya shell. You can modify them and r
 ```bash
 ssh rp-XXXXXX.local -l root
 rw
-cd /opt/redpitaya/www/apps/lock_in+pid_harmonic/c
+cd /opt/redpitaya/www/apps/lock_in+pid_harmonic2/c
 
 make clean
 make all
@@ -185,7 +185,7 @@ Or both (if you put an integer after a reg name, it will write it ):
 The same commands can be accessed using the virtual URI :
 
 If you access to:
-`http://rp-XXXXXX.local/lock_in+pid_harmonic/osc?Dec=&conf=2`
+`http://rp-XXXXXX.local/lock_in+pid_harmonic2/osc?Dec=&conf=2`
 
 You will read `Dec` register and set and read `conf=2` in the oscilloscope module.
 
@@ -193,7 +193,7 @@ IMPORTANT: GET protocol will only work if you put the `=` character after the re
 
 The same thing can be used for `lock` module. If you don't send params, all the registers are read:
 
-`http://rp-XXXXXX.local/lock_in+pid_harmonic/lock`
+`http://rp-XXXXXX.local/lock_in+pid_harmonic2/lock`
 
 
 You can use this in python using this:
@@ -201,7 +201,7 @@ You can use this in python using this:
 ```python
 import requests
 
-res = requests.get('http://rp-XXXXXX.local/lock_in+pid_harmonic/osc', {'Dec'̈́:'' , 'conf': 2 } )
+res = requests.get('http://rp-XXXXXX.local/lock_in+pid_harmonic2/osc', {'Dec'̈́:'' , 'conf': 2 } )
 if res.ok:
     print(res.text)
 else:
@@ -210,8 +210,8 @@ else:
 
 Also, you can access registers information through this files:
 
-  * `http://rp-XXXXXX.local/lock_in+pid_harmonic/c/osc.txt`
-  *  `http://rp-XXXXXX.local/lock_in+pid_harmonic/c/lock.txt`
+  * `http://rp-XXXXXX.local/lock_in+pid_harmonic2/c/osc.txt`
+  *  `http://rp-XXXXXX.local/lock_in+pid_harmonic2/c/lock.txt`
 
 
 ## Python programs to access the API
@@ -221,7 +221,7 @@ Also, you can access registers information through this files:
 
 # Load rp APP
 from control_finn import RedPitayaApp
-rp = RedPitayaApp('http://rp-f00a3b.local/lock_in+pid_harmonic/?type=run')
+rp = RedPitayaApp('http://rp-f00a3b.local/lock_in+pid_harmonic2/?type=run')
 # The URI can be just a copy&paste of the browser URI
 
 # Configure acquisition

@@ -18,7 +18,7 @@ import sys
 
 from control_hugo import red_pitaya_control,red_pitaya_app
 
-AppName      = 'lock_in+pid_harmonic'
+AppName      = 'lock_in+pid_harmonic2'
 host         = 'rp-f00a3b.local'
 port         = 22  # default port
 trigger_type = 6   # 6 is externa trigger
