@@ -16,7 +16,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TWO Harmonic lock-in+PID (v0.4.0)</title>
+  <title>TWO Harmonic lock-in+PID (v0.4.1)</title>
   <link href="../assets/bootstrap-3.0.0/css/bootstrap.css" rel="stylesheet" type="text/css">
   <link href="../assets/style.css?6" rel="stylesheet" type="text/css">
   <script src="../assets/bootstrap-3.0.0/js/jquery.js"></script>
@@ -50,8 +50,17 @@
 
   var update_interval = 50;              // Update interval for PC, milliseconds
   var update_interval_mobdev = 500;      // Update interval for mobile devices, milliseconds
-  var request_timeout = 3000;            // Milliseconds
+  var request_timeout = 10000;           // Milliseconds. Was 3000; raised for Ecosystem 2.0, where POSTs
+                                         // can take longer and 3 s gave spurious "Error while sending data (E3)"
   var long_timeout = 20000;              // Milliseconds
+  var post_max_bytes = 600;              // Max size of each POST /data body. Ecosystem 2.0 nginx 1.19.10 + rp_module
+                                         // stop reading the body if it does not arrive in the first read; Chrome sends
+                                         // headers and body in one write only if both fit in ~1400 B (headers ~500-800 B)
+  var post_chunk_timeout = 2000;         // Milliseconds, per POST chunk. A healthy POST answers in ~10 ms; a hung one never
+  var post_chunk_retries = 2;            // Retries of a chunk that timed out (values are absolute, so it is safe)
+  var always_send_params = ['single_btn', 'xmin', 'xmax', 'lock_lock_control'];  // Sent in every POST, even if
+                                         // unchanged: loadParams() overrides them locally, so server may differ
+  var last_send_params = ['single_btn', 'auto_flag'];  // Go in the last POST when params are split
   var meas_panel_dec = 5;                // Decimation for numerical measure panel to make it human readable
   var meas_panel_dec_mobdev = 1;         // Decimation for numerical measure panel for mobile devices
   var points_per_px = 5;                 // How many points per pixel should be drawn. Set null for unlimited (will disable client side decimation).
@@ -111,6 +120,44 @@
   var touch_last_y = 0;
   var user_editing = false;
   var app_started = false;
+  var control_lost = false;              // Another client (main menu, another tab...) claimed the board
+  var auto_restarts = 0;                 // Automatic restarts since the last good GET /data
+  var claim_check_period = 250;          // Milliseconds, min time between /get_client_id checks
+  var last_claim_check = 0;
+  var claim_supported = true;            // false in 0.9x (no /set_client_id endpoint)
+  var claim_timeout = 1500;              // Milliseconds, /get_client_id timeout (healthy answer: ~10 ms)
+  var claim_fast_ms = 500;               // A /get_client_id answer slower than this -> cautious mode
+  // Cautious mode (2.0): a slow/failed /get_client_id means nginx is busy, usually an App change in progress
+  // (main_menu loading). A GET /data then may hit main_menu and crash the nginx worker (signal 11). No GET /data:
+  // re-check every cautious_delay ms and resume after cautious_need consecutive fast answers with our id.
+  var cautious_mode = false;
+  var cautious_delay = 3000;             // Milliseconds between /get_client_id checks in cautious mode
+  var cautious_need = 2;                 // Consecutive fast answers with our id needed to leave it
+  var cautious_max_checks = 10;          // Checks without leaving it -> error modal (Retry/Restart), never frozen
+  var cautious_ok = 0;
+  var cautious_checks = 0;
+  var cautious_timer = null;
+  var cautious_busy = false;             // A cautious /get_client_id check is in flight
+  var cautious_stalled = false;          // Gave up after cautious_max_checks (modal shown); Retry resumes it
+  var cautious_probe = false;            // Leave it through probeApp() (it began after "Application not loaded")
+  // "Application not loaded" / another App id in GET /data: no GET /data until probeApp() confirms our App
+  var app_check_pending = false;
+  var start_retries = 3;                 // bazaar?start attempts (2.0: the worker may die during the start)
+  var state_key = 'lockin_state_' + app_id;  // sessionStorage key of the last server-confirmed settings
+  // sessionStorage flag: Restart after onControlLost() -> restoreState() even if our App is still loaded
+  // (another tab of this same App took control). While set, saveState() does not overwrite state_key.
+  var restore_pending_key = 'lockin_restore_pending_' + app_id;
+  var restart_restores = false;          // The Restart button of the shown modal comes from onControlLost()
+  // Read-only params that the display uses but that are not saved in a config (config_params_keys).
+  // When they are missing (e.g. loading a saved config) the previous values of params.local are kept.
+  var display_keep_keys = ('meas_min_ch1,meas_max_ch1,meas_amp_ch1,meas_avg_ch1,meas_freq_ch1,meas_per_ch1,'+
+                           'meas_min_ch2,meas_max_ch2,meas_amp_ch2,meas_avg_ch2,meas_freq_ch2,meas_per_ch2,'+
+                           'lock_X,lock_Y,lock_X2,lock_Y2,lock_F3,lock_error_mean,lock_error_std,'+   // X2,Y2: 2nd demodulation channel
+                           'lock_lock_feedback,lock_stream_status').split(',');
+  // localStorage key of the saved configs. Own key of this App: 'lockConfig' is shared with lock_in+pid.
+  var config_storage_key = 'lockConfig_' + app_id;
+  var config_storage_old_key = 'lockConfig';
+  var last_state_save = 0;
   var last_get_failed = false;
   var refresh_counter = 0;
   var autorun = 1;
@@ -156,6 +203,14 @@
   var def_params = {
     en_avg_at_dec: 0
   };
+
+  // Ecosystem 2.0: claim the board like the factory Apps do (spectrumpro/js/scope.js), so that a tab
+  // with the main menu open does not relaunch main_menu and unload this App. In 0.9x it just fails.
+  // Global: checkClaim() compares it with /get_client_id before each GET /data.
+  var client_id = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random() * 16 | 0, v = (c == 'x' ? r : (r & 0x3 | 0x8));
+    return v.toString(16);
+  });
 
   // On page loaded
 
@@ -1075,12 +1130,13 @@
     });
 
     $('.btn-app-restart').on('click', function() {
+      if(restart_restores) setRestorePending(true);  // "took control" modal: restore after the reload
       location.reload();
     });
 
     $('#btn_retry_get').on('click', function() {
       $('#modal_err').modal('hide');
-      updateGraphData();
+      resumeApp();  // Probe first: GET /data with another 2.0 App loaded crashes the nginx worker
     });
 
     $('#btn_close').on('click', function() {
@@ -1649,7 +1705,7 @@
 
     // Load first data
     if(window.location.href[0]!='f'){
-      updateGraphData();
+      claimBoard().always(resumeApp);  // Claim, then probe which App is loaded before any GET /data
     } else{
       $('#bottom_panel').find('select').prop('disabled', false); // LOLO lock panel
       $('#leftpanel').find('select').prop('disabled', false); // LOLO left panel
@@ -2237,6 +2293,12 @@
     }
   }
 
+  // Value of a numeric param for the display: 0 if it is missing (never received)
+  function display_val(key) {
+    var v = params.local[key];
+    return (v === undefined || v === null || isNaN(v)) ? 0 : v;
+  }
+
   function display_update() {
     if(!params.local) return 0;
     var set_raw  =  $('#lock_osc_raw_mode').data('checked');
@@ -2255,14 +2317,14 @@
     if(set_raw) scl = 1/2048;
 
     if(disp_slow){
-      var X = params.local.lock_X  *scl ;
-      var Y = params.local.lock_Y  *scl ;
+      var X = display_val('lock_X')*scl ;
+      var Y = display_val('lock_Y')*scl ;
 
       var R = Math.sqrt( Math.pow(X,2)+Math.pow(Y,2)) ;
       var Fi= Math.atan2(Y,X)*180/Math.PI ;
 
-      var X2 = params.local.lock_X2  *scl ;
-      var Y2 = params.local.lock_Y2  *scl ;
+      var X2 = display_val('lock_X2')*scl ;
+      var Y2 = display_val('lock_Y2')*scl ;
 
       var R2 = Math.sqrt( Math.pow(X2,2)+Math.pow(Y2,2)) ;
       var Fi2= Math.atan2(Y2,X2)*180/Math.PI ;
@@ -2280,8 +2342,8 @@
         $('#disp_r2' ).html(  R2.toFixed(fixn) );
         $('#disp_fi2').html(  Fi2.toFixed(2+fixn));
       }else{
-        var fv0 = Math.max( params.local.lock_X.toString().length , params.local.lock_Y.toString().length )  ;
-        var fv1 = Math.max( params.local.lock_X2.toString().length , params.local.lock_Y2.toString().length )  ;
+        var fv0 = Math.max( String(display_val('lock_X')).length , String(display_val('lock_Y')).length )  ;
+        var fv1 = Math.max( String(display_val('lock_X2')).length , String(display_val('lock_Y2')).length )  ;
 
         $('#disp_x' ).html( format_oom(X ,'V',fv0) );
         $('#disp_y' ).html( format_oom(Y ,'V',fv0) );
@@ -2296,11 +2358,11 @@
 
       if ( (new Date().getTime()) > lasttsp+300 ) {
         lasttsp=Math.floor((new Date().getTime())/1000);
-        set_bar( 'disp_x' , params.local.lock_X);
-        set_bar( 'disp_y' , params.local.lock_Y);
+        set_bar( 'disp_x' , display_val('lock_X'));
+        set_bar( 'disp_y' , display_val('lock_Y'));
 
-        set_bar( 'disp_x2' , params.local.lock_X2);
-        set_bar( 'disp_y2' , params.local.lock_Y2);
+        set_bar( 'disp_x2' , display_val('lock_X2'));
+        set_bar( 'disp_y2' , display_val('lock_Y2'));
       }
     }
 
@@ -2556,36 +2618,244 @@
   }
 
 
-  function startApp() {
-    $.get(
-      start_app_url
-    )
-    .done(function(dresult) {
-      if(dresult.status == 'ERROR') {
-        showModalError((dresult.reason ? dresult.reason : 'Could not start the application.'), true);
+  // Ecosystem 2.0: POST /set_client_id (Lua) writes our id; the factory Apps check it before relaunching
+  // themselves. Returns the jqXHR. In 0.9x the endpoint does not exist: checkClaim() is then disabled.
+  function claimBoard() {
+    return $.ajax({ url: root_url + '/set_client_id', type: 'POST', data: client_id, timeout: 2000,
+                    cache: false, contentType: false, processData: false })
+    .done(function() { claim_supported = true; last_claim_check = 0; })
+    .fail(function(xhr) {
+      if(xhr.status == 404 || xhr.status == 405) claim_supported = false;
+      console.log('set_client_id not available (Ecosystem < 2.0?)');
+    });
+  }
+
+  // Ecosystem 2.0: GET /data with another 2.0 App loaded (main_menu, scopegenpro...) crashes the nginx worker
+  // (rp_sig_len uninitialized in rp_data_get_signals + stub rp_get_signals). POST /data with no params is safe
+  // (stubs rp_set_params/rp_get_params) and returns app.id. Resolves with the loaded app id, '' if no App is
+  // loaded, or null if there was no (usable) answer.
+  function probeApp() {
+    var dfd = $.Deferred();
+    $.ajax({ type: 'POST', url: post_url, data: JSON.stringify({ datasets: { params: {} } }),
+             timeout: post_chunk_timeout, cache: false })
+    .done(function(d) { dfd.resolve(d && d.app ? (d.app.id || '') : null); })   // '' = no App loaded
+    .fail(function() { dfd.resolve(null); });
+    return dfd.promise();
+  }
+
+  // Page load and Retry button: GET /data only if our App is the loaded one, otherwise start it
+  function resumeApp() {
+    probeApp().done(function(id) {
+      if(id === app_id) {
+        app_check_pending = false;  // probeApp() confirmed our App: GET /data allowed again
+        if(isRestorePending()) { restoreState(); }  // Restart after onControlLost(): restore, no stop/start
+        else { app_started = true; control_lost = false; updateGraphData(); }  // already running: keep its state
+      }
+      else { startApp(1, id); }
+    });
+  }
+
+  // Resolves (st, ms, text_status). st: 'own' | 'lost' | 'slow' (our id, but answered in >= claim_fast_ms) |
+  // 'unknown' (failed or aborted: nginx busy, e.g. during /bazaar?apps=). 0.9x has no endpoint -> 'own'.
+  // Outside cautious mode, checks closer than claim_check_period resolve 'own' without a request.
+  function checkClaim() {
+    var dfd = $.Deferred();
+    if(!claim_supported || (!cautious_mode && Date.now() - last_claim_check < claim_check_period))
+      return dfd.resolve('own', 0).promise();
+    var t0 = Date.now();
+    $.ajax({ url: root_url + '/get_client_id', timeout: claim_timeout, cache: false, dataType: 'text' })
+    .done(function(msg) {
+      var ms = Date.now() - t0;
+      last_claim_check = Date.now();
+      if(String(msg).trim() !== client_id) dfd.resolve('lost', ms);
+      else dfd.resolve(ms < claim_fast_ms ? 'own' : 'slow', ms);
+    })
+    .fail(function(xhr, text_status) {
+      last_claim_check = 0;
+      dfd.resolve((xhr.status == 404 || xhr.status == 405) ? 'own' : 'unknown', Date.now() - t0, text_status);
+    });
+    return dfd.promise();
+  }
+
+  function describeClaim(st, ms, text_status) {
+    return '/get_client_id ' + (st === 'slow' ? 'slow' : 'failed (' + (text_status || 'error') + ')') + ' in ' + ms + ' ms';
+  }
+
+  // No GET /data until cautious_need consecutive fast /get_client_id answers with our id (see cautious_mode)
+  function enterCautious(reason, then_probe) {
+    if(then_probe) cautious_probe = true;
+    if(!cautious_mode) {
+      cautious_mode = true;
+      cautious_checks = 0;
+      cautious_stalled = false;
+      console.info('Cautious mode ON: ' + reason + '. No GET /data until ' + cautious_need +
+                   ' fast /get_client_id answers with our id' + (cautious_probe ? ' and probeApp() confirms our App' : ''));
+    }
+    cautious_ok = 0;
+    if(cautious_timer) clearTimeout(cautious_timer);
+    cautious_timer = setTimeout(cautiousCheck, cautious_delay);
+  }
+
+  function leaveCautious(reason) {
+    if(cautious_timer) {
+      clearTimeout(cautious_timer);
+      cautious_timer = null;
+    }
+    if(cautious_mode) console.info('Cautious mode OFF: ' + reason);
+    cautious_mode = false;
+    cautious_ok = 0;
+    cautious_checks = 0;
+    cautious_stalled = false;
+    cautious_probe = false;
+  }
+
+  function cautiousCheck() {
+    cautious_timer = null;
+    if(!cautious_mode || cautious_busy) return;
+    if(control_lost) { leaveCautious('control lost'); return; }
+    cautious_busy = true;
+    checkClaim().done(function(st, ms, text_status) {
+      cautious_busy = false;
+      if(!cautious_mode) return;
+      if(st === 'lost') {
+        leaveCautious('/get_client_id returned another id');
+        onControlLost();
+        return;
+      }
+      cautious_checks++;
+      if(st === 'own') {
+        if(++cautious_ok >= cautious_need) {
+          var probe = cautious_probe;
+          leaveCautious(cautious_ok + ' fast /get_client_id answers with our id (last ' + ms + ' ms)' +
+                        (probe ? ', probing the loaded App' : ''));
+          if(probe) resumeApp();   // probeApp() first: GET /data only if our App is the loaded one
+          else updateGraphData();
+          return;
+        }
       }
       else {
-        $.post(
-          post_url,
-          JSON.stringify({ datasets: { params: def_params } })
-        )
-        .done(function(dresult) {
-          app_started = true;
-          updateGraphData();
-        })
-        .fail(function() {
-          showModalError('Could not initialize the application with default parameters.', false, true);
-        });
+        cautious_ok = 0;
+        console.log('Cautious mode: ' + describeClaim(st, ms, text_status));
       }
+      if(cautious_checks >= cautious_max_checks) {
+        cautious_stalled = true;   // updateGraphData() (Retry -> resumeApp()) starts the checks again
+        showModalError('The Red Pitaya does not answer (/get_client_id).', true, true);
+        return;
+      }
+      cautious_timer = setTimeout(cautiousCheck, cautious_delay);
+    });
+  }
+
+  // Stop polling and do not restart by ourselves (avoids the main_menu <-> App ping-pong)
+  function onControlLost() {
+    control_lost = true;
+    app_started = false;
+    if(update_timer) {
+      clearTimeout(update_timer);
+      update_timer = null;
+    }
+    showModalError('Another client (main menu or another App) took control of the Red Pitaya.<br>' +
+                   'Press Restart to take it back: your last settings will be restored.', false, true);
+    restart_restores = true;  // after showModalError(), which clears it
+  }
+
+  function isRestorePending() {
+    try { return sessionStorage.getItem(restore_pending_key) === '1'; } catch(e) { return false; }
+  }
+
+  function setRestorePending(on) {
+    try {
+      if(on) sessionStorage.setItem(restore_pending_key, '1');
+      else   sessionStorage.removeItem(restore_pending_key);
+    } catch(e) {}
+  }
+
+  // Last server-confirmed user settings (same keys as Config save). sessionStorage: per tab, survives
+  // location.reload() (Restart), is not shared with other tabs and is cleared when the tab is closed.
+  function saveState(srv, force) {
+    if(!srv || (force !== true && Date.now() - last_state_save < 2000)) return;
+    if(isRestorePending()) return;  // Keep the state to restore (the board may have another tab's settings)
+    var s = {};
+    for(var i in config_params_keys) {
+      var k = config_params_keys[i];
+      if(srv[k] !== null && srv[k] !== undefined && isFinite(srv[k])) s[k] = Number(srv[k]);
+    }
+    try { sessionStorage.setItem(state_key, JSON.stringify(s)); last_state_save = Date.now(); } catch(e) {}
+  }
+
+  // After each start: send def_params + the saved state (the server side App starts with its static defaults)
+  function restoreState() {
+    var p = $.extend({}, def_params), saved = null;
+    try { saved = JSON.parse(sessionStorage.getItem(state_key)); } catch(e) {}
+    if(saved) {
+      $.extend(p, saved);
+      /* LOLO load_config_block_start */
+      // Same safety rule as Config -> load: an unexpected restart should not close the loops by itself
+      if(load_config_block_start == 1) {
+        p.lock_ctrl_aux_ramp_enable_ctrl = 0;
+        p.lock_ctrl_aux_pidA_enable_ctrl = 0;
+        p.lock_ctrl_aux_pidB_enable_ctrl = 0;
+        p.lock_ramp_enable               = 0;   // "Scan enable" of the Ramp panel (0x406000bc in this App)
+        p.lock_ctrl_aux_lock_now         = 0;   // lock_control[0]: would start a lock right away
+        p.lock_ctrl_aux_launch_lock_trig = 0;   // lock_control[1]: would arm the lock trigger
+      }
+    }
+    // Split in several sequential POSTs if needed (Ecosystem 2.0 hangs with big POST bodies)
+    postParamsChunks(splitParams(p), post_chunk_timeout, post_chunk_retries)
+    .done(function() {
+      setRestorePending(false);
+      app_started = true;
+      control_lost = false;
+      auto_restarts = 0;
+      updateGraphData();
     })
     .fail(function() {
-      showModalError('Could not start the application.', true);
+      setRestorePending(false);
+      showModalError('Could not restore the application parameters.', false, true);
     });
+  }
+
+  // prev_id: App loaded before ('' none, null unknown, other id). If it is another App, stop it first and wait
+  // for the worker to die (2.0 ws_server stop() -> exit(-1) 1 s later): our start then runs once, in a clean worker.
+  // bazaar?stop ignores its argument (0.9x and 2.0), the id is only informative.
+  function startApp(attempt, prev_id) {
+    attempt = attempt || 1;
+    var pre = $.Deferred();
+    if(prev_id && prev_id !== app_id) {
+      console.info('startApp: ' + prev_id + ' is loaded, stopping it before start (attempt ' + attempt + ')');
+      $.ajax({ url: stop_app_url + prev_id, timeout: long_timeout, cache: false })
+      .always(function() { setTimeout(function() { pre.resolve(); }, 1500); });
+    }
+    else { pre.resolve(); }
+    pre.done(function() {
+      $.ajax({ url: start_app_url, timeout: long_timeout, cache: false })
+      .always(function(d) {
+        // 2.0: unloading a websocket App (main_menu...) kills the worker ~1 s later (ws_server exit(-1)),
+        // possibly during our start. Confirm with the safe probe and retry.
+        setTimeout(function() {
+          probeApp().done(function(id) {
+            if(id === app_id) {
+              app_check_pending = false;  // probeApp() confirmed our App: GET /data allowed again
+              restoreState();
+            }
+            else if(attempt < start_retries) {
+              console.info('startApp: attempt ' + attempt + ' failed (loaded app: ' +
+                           (id === null ? 'no answer' : (id === '' ? 'none' : id)) + '), retrying');
+              startApp(attempt + 1, id);
+            }
+            else {
+              showModalError((d && d.reason) ? d.reason : 'Could not start the application.', true);
+            }
+          });
+        }, 1500);
+      });
+    });   // pre.done
   }
 
   function showModalError(err_msg, retry_btn, restart_btn, ignore_btn) {
     var err_modal = $('#modal_err');
 
+    restart_restores = false;  // onControlLost() sets it again after this call
     err_modal.find('#btn_retry_get')[retry_btn ? 'show' : 'hide']();
     err_modal.find('.btn-app-restart')[restart_btn ? 'show' : 'hide']();
     err_modal.find('#btn_ignore')[ignore_btn ? 'show' : 'hide']();
@@ -2594,7 +2864,15 @@
   }
 
   function updateGraphData() {
-    if(downloading||scope_stop) {
+    if(downloading||scope_stop||control_lost||app_check_pending) {
+      return;
+    }
+    if(cautious_mode) {  // only cautiousCheck() leaves it; other callers (sendParams, buttons) just wait
+      if(cautious_stalled && !cautious_timer && !cautious_busy) {  // after the error modal: Retry
+        cautious_stalled = false;
+        cautious_checks = 0;
+        cautiousCheck();
+      }
       return;
     }
     if(update_timer) {
@@ -2603,6 +2881,23 @@
     }
     downloading = true;
 
+    // Ecosystem 2.0: check we still own the board before GET /data (another App loaded -> worker crash)
+    checkClaim().done(function(st, ms, text_status) {
+      if(st === 'lost') {
+        downloading = false;
+        onControlLost();
+        return;
+      }
+      if(st !== 'own') {  // 'slow' | 'unknown': nginx busy (App change?), GET /data could crash the worker
+        downloading = false;
+        enterCautious(describeClaim(st, ms, text_status));
+        return;
+      }
+      doGetData();
+    });
+  }
+
+  function doGetData() {
     // Send params if there are any unsent changes
     sendParams();
 
@@ -2618,27 +2913,53 @@
       last_get_failed = false;
 
       if(dresult.status === 'ERROR') {
-        if(! app_started) {
-          startApp();
-        }
-        else {
-          showModalError((dresult.reason ? dresult.reason : 'Application error.'), true, true);
-        }
+        // "Application not loaded": restart only if we still own the board (no ping-pong with main_menu)
+        app_check_pending = true;  // no GET /data until probeApp() (POST) confirms our App is loaded
+        last_claim_check = 0;  // force a fresh check
+        checkClaim().done(function(st, ms, text_status) {
+          if(st === 'lost') {
+            onControlLost();
+          }
+          else if(st !== 'own') {  // nginx busy: maybe an App change in progress, wait before deciding
+            enterCautious('Application not loaded, ' + describeClaim(st, ms, text_status), true);
+          }
+          else if(!app_started || auto_restarts++ < 2) {  // our own board: the worker died or the App was unloaded
+            app_started = false;
+            startApp();
+          }
+          else {
+            showModalError((dresult.reason ? dresult.reason : 'Application error.'), true, true);
+          }
+        });
       }
       else if(dresult.datasets !== undefined && dresult.datasets.params !== undefined) {
         // Check if the application started on the server is the same as on client
         if(app_id !== dresult.app.id) {
-          if(! app_started) {
-            startApp();
-          }
-          else {
-            $('#new_app_id').text(dresult.app.id);
-            $('#modal_app').modal('show');
-          }
+          var other_app_id = dresult.app.id;
+          app_check_pending = true;  // no GET /data until probeApp() (POST) confirms our App is loaded
+          last_claim_check = 0;  // force a fresh check
+          checkClaim().done(function(st, ms, text_status) {
+            if(st === 'lost') {
+              onControlLost();
+            }
+            else if(st !== 'own') {  // nginx busy: maybe an App change in progress, wait before deciding
+              enterCautious('loaded App is ' + other_app_id + ', ' + describeClaim(st, ms, text_status), true);
+            }
+            else if(!app_started || auto_restarts++ < 2) {
+              app_started = false;
+              startApp(1, other_app_id);
+            }
+            else {
+              $('#new_app_id').text(other_app_id);
+              $('#modal_app').modal('show');
+            }
+          });
           return;
         }
 
         app_started = true;
+        auto_restarts = 0;
+        saveState(dresult.datasets.params);
 
         // Check if trigger mode (which may switch autorun) was changed during ajax request
         var arun_after_ajax = autorun;
@@ -2707,6 +3028,7 @@
     .fail(function(jqXHR, textStatus, errorThrown) {
       // Incrementar contador de fallos
       get_fail_count++;
+      last_claim_check = 0;  // the worker may have died: fresh /get_client_id check (cautious mode if slow)
       
       // Solo mostrar modal después de varios fallos consecutivos
       if(get_fail_count >= MAX_CONSECUTIVE_FAILS) {
@@ -2850,9 +3172,40 @@
     user_editing = false;
   }
 
+  // Signals tied to 0 in this FPGA (lock.v: sin_ref, cos_1f, cos_2f, cos_3f, F3o) have a disabled "(n/a)" <option>
+  // (same value, so indexes and saved configs stay valid). A config/state that selects one is loaded anyway:
+  // only warn, once per selector and value.
+  var na_switches = ['lock_error_sw','lock_out1_sw','lock_out2_sw','lock_signal_sw','lock_signal2_sw','lock_pidA_sw','lock_pidB_sw',
+                     'lock_slow_out3_sw','lock_slow_out4_sw'];
+  var na_warned = {};
+  function warnNaSwitches() {
+    for(var i = 0; i < na_switches.length; i++) {
+      var el = document.getElementById(na_switches[i]);
+      if(!el) continue;
+      var opt = (el.selectedIndex >= 0 ? el.options[el.selectedIndex] : null);
+      if(opt && opt.disabled) {
+        if(na_warned[el.id] !== opt.value) {
+          na_warned[el.id] = opt.value;
+          console.warn(el.id + ' = ' + opt.value + ' (' + opt.text + '): this signal is always 0 in this FPGA.');
+        }
+      } else {
+        delete na_warned[el.id];
+      }
+    }
+  }
+
   function loadParams(orig_params) {
     if(! $.isPlainObject(orig_params)) {
       return;
+    }
+
+    // Keys missing in orig_params (a saved config does not have the read-only values): keep the previous ones
+    if(params.local) {
+      for(var ki = 0; ki < display_keep_keys.length; ki++) {
+        var kk = display_keep_keys[ki];
+        if(orig_params[kk] === undefined && params.local[kk] !== undefined)
+          orig_params[kk] = params.local[kk];
+      }
     }
 
     // Ignore xmin/xmax values received from server. That values must be used only on AUTO button click
@@ -2870,7 +3223,7 @@
         //orig_params.lock_ctrl_aux_lock_trig_rise     = params.local.lock_ctrl_aux_lock_trig_rise     ;
         trigger_just_set=false;
       }
-      if(orig_params.lock_lock_control!=orig_params.lock_lock_feedback)
+      if(orig_params.lock_lock_feedback !== undefined && orig_params.lock_lock_control!=orig_params.lock_lock_feedback)
         orig_params.lock_lock_control=orig_params.lock_lock_feedback;
     }
 
@@ -3115,6 +3468,8 @@
     
     // [LOLO DOCK LOADPARAMS END]
 
+    warnNaSwitches();
+
     //$('#lock_stream_ip'          ).val( Int32toIP(params.original.lock_stream_ip)         );
 
     lock_ramp_step_update();
@@ -3169,8 +3524,99 @@
     return false;
   }
 
-  function sendParams(refresh_data, force_send, single_btn, user_editing_update) {
-    if(sending || (force_send !== true && !isParamChanged())) {
+  // Split a params object in several objects, so that the JSON body of each POST
+  // is smaller than post_max_bytes. Keys in last_send_params go in the last one.
+  // Only finite numeric values are sent: null/bool/strings crash (2.0) or hang (0.9x) the nginx worker.
+  function splitParams(p) {
+    var chunks = [];
+    var chunk = {};
+    var chunk_len = 0;
+    var base_len = JSON.stringify({ datasets: { params: {} } }).length;
+    var keys = [];
+    var last_keys = [];
+
+    for(var key in p) {
+      if(last_send_params.indexOf(key) >= 0) {
+        last_keys.push(key);
+      }
+      else {
+        keys.push(key);
+      }
+    }
+    keys = keys.concat(last_keys);
+
+    for(var i = 0; i < keys.length; i++) {
+      var raw = p[keys[i]];
+      var v = (typeof raw === 'number' || (typeof raw === 'string' && raw.trim() !== '')) ? Number(raw) : NaN;
+      if(!isFinite(v)) {
+        console.warn('splitParams: skipping non-numeric param', keys[i], raw);
+        continue;
+      }
+      var item_len = JSON.stringify(keys[i]).length + JSON.stringify(v).length + 2;  // "key":value,
+      if(chunk_len > 0 && base_len + chunk_len + item_len > post_max_bytes) {
+        chunks.push(chunk);
+        chunk = {};
+        chunk_len = 0;
+      }
+      chunk[keys[i]] = v;
+      chunk_len += item_len;
+    }
+    chunks.push(chunk);
+
+    return chunks;
+  }
+
+  // POST a list of params objects one after the other (each POST waits for the previous one).
+  // Returns a promise: resolved with the response of the last POST (or of the first one that
+  // is not a valid params response, so the caller can handle it), rejected if any POST fails.
+  // A chunk that times out is sent again up to `retries` times (Ecosystem 2.0 may never answer a
+  // POST whose body was split by TCP; values are absolute, so resending is safe).
+  function postParamsChunks(chunks, timeout, retries) {
+    var dfd = $.Deferred();
+    var i = 0;
+    var max_retries = (retries === undefined ? post_chunk_retries : retries);
+    var tries_left = max_retries;
+
+    function postNext() {
+      $.ajax({
+        type: 'POST',
+        url: post_url,
+        data: JSON.stringify({ datasets: { params: chunks[i] } }),
+        timeout: timeout,
+        cache: false
+      })
+      .done(function(dresult) {
+        i++;
+        tries_left = max_retries;
+        if(i < chunks.length && dresult.datasets !== undefined && dresult.datasets.params !== undefined) {
+          postNext();
+        }
+        else {
+          dfd.resolve(dresult);
+        }
+      })
+      .fail(function(xhr, status) {
+        if(status === 'timeout' && tries_left > 0) {
+          tries_left--;
+          console.warn('postParamsChunks: chunk ' + (i+1) + '/' + chunks.length + ' timed out, retrying (' +
+                       (max_retries - tries_left) + '/' + max_retries + ')');
+          postNext();  // same chunk again
+        }
+        else {
+          dfd.reject();
+        }
+      });
+    }
+
+    postNext();
+    return dfd.promise();
+  }
+
+  function sendParams(refresh_data, force_send, single_btn, user_editing_update, send_all) {
+    if(control_lost) {
+      return;  // Another client owns the board: do not change its settings
+    }
+    if(sending ||(force_send !== true && !isParamChanged())) {
       send_que = sending;
       return;
     }
@@ -3180,13 +3626,17 @@
     params.local.single_btn = (single_btn === true ? 1 : 0);
     use_long_timeout = !!auto_flag;
 
-    $.ajax({
-      type: 'POST',
-      url: post_url,
-      data: JSON.stringify({ datasets: { params: params.local } }),
-      timeout: (use_long_timeout ? long_timeout : request_timeout),
-      cache: false
-    })
+    // Send only the params that changed (same comparison as isParamChanged()), plus always_send_params.
+    // Ecosystem 2.0 hangs with big POST bodies (E3), so all the ~220 params can not be sent every time.
+    var send_params = {};
+    for(var key in params.local) {
+      if(send_all === true || !params.original || params.original[key] != params.local[key] ||
+         always_send_params.indexOf(key) >= 0) {
+        send_params[key] = params.local[key];
+      }
+    }
+
+    postParamsChunks(splitParams(send_params), (use_long_timeout ? long_timeout : post_chunk_timeout), post_chunk_retries)
     .done(function(dresult) {
       // OK: Load the params received as POST result
       if(dresult.datasets !== undefined && dresult.datasets.params !== undefined) {
@@ -3225,6 +3675,7 @@
           plot.draw();
         }
 
+        if(dresult.app && dresult.app.id === app_id) saveState(dresult.datasets.params, true);
         if(!user_editing) loadParams(dresult.datasets.params);
         //console.log('lock_error_offset: '+dresult.datasets.params["lock_error_offset"]);
         updateTriggerSlider();
@@ -4045,6 +4496,36 @@
 
   // Functions for params load/save
 
+  // Returns the saved configs of this App (JSON text) or '' if there are none.
+  // The first time, it copies from the old shared key 'lockConfig' the configs that belong to this App
+  // (they have lock_mod_out1/lock_lpf_F0_tau/lock_sg_amp0 and not lock_mod_sq_on, that is from lock_in+pid,
+  // and the 2nd channel keys lock_signal2_sw/lock_gen_mod_phase_B, that lock_in+pid_harmonic does not have).
+  // 'lockConfig' is left untouched because lock_in+pid and lock_in+pid_harmonic also use it.
+  function config_storage_read(){
+    if ( !localStorage[config_storage_key] && !localStorage[config_storage_key + '_migrated'] ) {
+      try {
+        var old_cfgs = localStorage[config_storage_old_key] ? JSON.parse(localStorage[config_storage_old_key]) : [];
+        var own_cfgs = [];
+        for(var oi = 0; oi < old_cfgs.length; oi++){
+          var od = (old_cfgs[oi] && old_cfgs[oi].data) ? old_cfgs[oi].data : {};
+          if( od.lock_mod_out1 !== undefined && od.lock_lpf_F0_tau !== undefined &&
+              od.lock_sg_amp0 !== undefined && od.lock_mod_sq_on === undefined &&
+              od.lock_signal2_sw !== undefined && od.lock_gen_mod_phase_B !== undefined )
+            own_cfgs.push(old_cfgs[oi]);
+        }
+        if(own_cfgs.length) {
+          localStorage[config_storage_key] = JSON.stringify(own_cfgs);
+          console.info('config_storage_read: ' + own_cfgs.length + ' configs copied from localStorage.' +
+                       config_storage_old_key + ' to localStorage.' + config_storage_key);
+        }
+      } catch(e) {
+        console.log('config_storage_read: could not migrate localStorage.' + config_storage_old_key + ': ' + e);
+      }
+      localStorage[config_storage_key + '_migrated'] = '1';
+    }
+    return localStorage[config_storage_key] || '';
+  }
+
   function config_save_storage(name){
     // check support and if there are saved configs
     if (typeof(Storage) == "undefined") {
@@ -4053,8 +4534,8 @@
     }
 
     // If thera are saved configs, load. If not, create empty container
-    if ( localStorage.lockConfig ){
-      params.storage=JSON.parse(localStorage.lockConfig);
+    if ( config_storage_read() ){
+      params.storage=JSON.parse(localStorage[config_storage_key]);
     } else {
       params.storage=[];
     }
@@ -4079,7 +4560,7 @@
     params.storage.push(tmp_storage_elem);
 
     // update storage key
-    localStorage.lockConfig=JSON.stringify(params.storage);
+    localStorage[config_storage_key]=JSON.stringify(params.storage);
 
   }
 
@@ -4091,8 +4572,8 @@
     }
 
     // If there are saved configs, load. If not, create empty container
-    if ( localStorage.lockConfig ){
-      params.storage=JSON.parse(localStorage.lockConfig);
+    if ( config_storage_read() ){
+      params.storage=JSON.parse(localStorage[config_storage_key]);
     } else {
       params.storage=[];
       console.log("config_load_storage: No data saved in storage");
@@ -4113,10 +4594,11 @@
       return -1 ;
     }
 
-    // Load actual data to skip loadParams errors
-    meas_keys="meas_min_ch1,meas_max_ch1,meas_amp_ch1,meas_avg_ch1,meas_freq_ch1,meas_per_ch1,meas_min_ch2,meas_max_ch2,meas_amp_ch2,meas_avg_ch2,meas_freq_ch2,meas_per_ch2".split(",");
-    for(i in meas_keys){
-      params.storage[num].data[ meas_keys[i] ] = params.local[ meas_keys[i] ]
+    // Load actual data to skip loadParams errors (meas_*, lock_X/Y/F1/F2/F3, ... are not saved in a config)
+    var meas_keys = display_keep_keys;
+    for(var mi = 0; mi < meas_keys.length; mi++){
+      if(params.local && params.local[ meas_keys[mi] ] !== undefined)
+        params.storage[num].data[ meas_keys[mi] ] = params.local[ meas_keys[mi] ];
     }
 
     /* LOLO load_config_block_start */
@@ -4125,6 +4607,9 @@
       params.storage[num].data['lock_ctrl_aux_ramp_enable_ctrl']   = 0 ;
       params.storage[num].data['lock_ctrl_aux_pidA_enable_ctrl']   = 0 ;
       params.storage[num].data['lock_ctrl_aux_pidB_enable_ctrl']   = 0 ;
+      params.storage[num].data['lock_ramp_enable']                 = 0 ;  // "Scan enable" of the Ramp panel
+      params.storage[num].data['lock_ctrl_aux_lock_now']           = 0 ;  // would start a lock right away
+      params.storage[num].data['lock_ctrl_aux_launch_lock_trig']   = 0 ;  // would arm the lock trigger
     }
     // */
     user_editing = true;
@@ -4134,7 +4619,8 @@
     loadParams(params.storage[num].data);
 
     // update params to server
-    sendParams(true, true);
+    // send_all: loadParams() overwrote params.original, so all params must be sent, not only changed ones
+    sendParams(true, true, false, false, true);
 
   }
 
@@ -4146,8 +4632,8 @@
     }
 
     // If there are saved configs, load. If not, create empty container
-    if ( localStorage.lockConfig ){
-      params.storage=JSON.parse(localStorage.lockConfig);
+    if ( config_storage_read() ){
+      params.storage=JSON.parse(localStorage[config_storage_key]);
     } else {
       params.storage=[];
       console.log("config_del_storage: No data saved in storage");
@@ -4173,7 +4659,7 @@
     params.storage.splice(num, 1);
 
     // update storage key
-    localStorage.lockConfig=JSON.stringify(params.storage);
+    localStorage[config_storage_key]=JSON.stringify(params.storage);
   }
 
 
@@ -4185,8 +4671,8 @@
     }
 
     // If there are saved configs, load. If not, create empty container
-    if ( localStorage.lockConfig ){
-      params.storage=JSON.parse(localStorage.lockConfig);
+    if ( config_storage_read() ){
+      params.storage=JSON.parse(localStorage[config_storage_key]);
     } else {
       params.storage=[];
       console.log("config_load_storage: No data saved in storage");
@@ -4246,8 +4732,8 @@
 
 
       // If thera are saved configs, load. If not, create empty container
-      if ( localStorage.lockConfig ){
-        params.storage=JSON.parse(localStorage.lockConfig);
+      if ( config_storage_read() ){
+        params.storage=JSON.parse(localStorage[config_storage_key]);
       } else {
         params.storage=[];
       }
@@ -4267,7 +4753,7 @@
       params.storage.push(tmp_storage_elem);
 
       // update storage key
-      localStorage.lockConfig=JSON.stringify(params.storage);
+      localStorage[config_storage_key]=JSON.stringify(params.storage);
 
       // update config table
       config_show_storage();
@@ -4295,7 +4781,7 @@
     var dd = dd || new Date().toJSON() ;
     var date = new Date(dd);
     var date_str= ('0'+date.getFullYear()).substr(-4,4)+'-'+
-                  ('0'+date.getMonth()+1 ).substr(-2,2)+'-'+
+                  ('0'+(date.getMonth()+1) ).substr(-2,2)+'-'+
                   ('0'+date.getDate()    ).substr(-2,2)+
                   ' '+
                   ('0'+date.getHours()   ).substr(-2,2)+':'+
@@ -4355,7 +4841,7 @@
     <div class="container">
       <a id="btn_exit" class="pull-left" href="/index.html"><span class="glyphicon glyphicon-chevron-left" title="Exit" alt="Exit"></span></a>
       <img class="logo pull-left" src="../assets/images/logo_white.png">
-      <h2 class="page-title">TWO Harmonic lock-in[+PID] (v0.4.0)</h2>
+      <h2 class="page-title">TWO Harmonic lock-in[+PID] (v0.4.1)</h2>
     </div>
   </div>
   <div class="container">
@@ -4593,11 +5079,11 @@
                             <option  value="2">in2</option>
                             <option  value="3">in1-in2</option>
                             <option  value="4">error</option>
-                            <option  value="5">cos_1f</option>
-                            <option  value="6">cos_2f</option>
-                            <option  value="7">cos_3f</option>
+                            <option  value="5" disabled>cos_1f (n/a)</option>
+                            <option  value="6" disabled>cos_2f (n/a)</option>
+                            <option  value="7" disabled>cos_3f (n/a)</option>
                             <option  value="8">cos_ref</option>
-                            <option  value="9">sin_ref</option>
+                            <option  value="9" disabled>sin_ref (n/a)</option>
                             <option  value="10">PID A out</option>
                             <option  value="11">PID B out</option>
                             <option  value="12">ctrl_A</option>
@@ -4620,11 +5106,11 @@
                             <option  value="2">in2</option>
                             <option  value="3">in1-in2</option>
                             <option  value="4">error</option>
-                            <option  value="5">cos_1f</option>
-                            <option  value="6">cos_2f</option>
-                            <option  value="7">cos_3f</option>
+                            <option  value="5" disabled>cos_1f (n/a)</option>
+                            <option  value="6" disabled>cos_2f (n/a)</option>
+                            <option  value="7" disabled>cos_3f (n/a)</option>
                             <option  value="8">cos_ref</option>
-                            <option  value="9">sin_ref</option>
+                            <option  value="9" disabled>sin_ref (n/a)</option>
                             <option  value="10">PID A out</option>
                             <option  value="11">PID B out</option>
                             <option  value="12">ctrl_A</option>
@@ -4713,10 +5199,10 @@
                                 <option  value="1">in1</option>
                                 <option  value="2">in2</option>
                                 <option  value="3">in1-in2</option>
-                                <option  value="4">sin_ref</option>
-                                <option  value="5">cos_1f</option>
-                                <option  value="6">cos_2f</option>
-                                <option  value="7">cos_3f</option>
+                                <option  value="4">cos_ref</option>
+                                <option  value="5" disabled>cos_1f (n/a)</option>
+                                <option  value="6" disabled>cos_2f (n/a)</option>
+                                <option  value="7" disabled>cos_3f (n/a)</option>
                                 <option  value="8">0</option>
                                 <option  value="9">0</option>
                                 <option  value="10">Ramp A</option>
@@ -4741,9 +5227,9 @@
                                 <option  value="2">in2</option>
                                 <option  value="3">in1-in2</option>
                                 <option  value="4">cos_ref</option>
-                                <option  value="5">cos_1f</option>
-                                <option  value="6">cos_2f</option>
-                                <option  value="7">cos_3f</option>
+                                <option  value="5" disabled>cos_1f (n/a)</option>
+                                <option  value="6" disabled>cos_2f (n/a)</option>
+                                <option  value="7" disabled>cos_3f (n/a)</option>
                                 <option  value="8">0</option>
                                 <option  value="9">0</option>
                                 <option  value="10">Ramp B</option>
@@ -4792,8 +5278,8 @@
                           <option  value="1">in2</option>
                           <option  value="2">in1-in2</option>
                           <option  value="3">cos_ref</option>
-                          <option  value="4">sin_ref</option>
-                          <option  value="5">cos_1f</option>
+                          <option  value="4" disabled>sin_ref (n/a)</option>
+                          <option  value="5" disabled>cos_1f (n/a)</option>
                           <option  value="6">aux_A</option>
                           <option  value="7">Ramp A</option>
                         </select>
@@ -4813,8 +5299,8 @@
                           <option  value="1">in2</option>
                           <option  value="2">in1-in2</option>
                           <option  value="3">cos_ref</option>
-                          <option  value="4">sin_ref</option>
-                          <option  value="5">cos_1f</option>
+                          <option  value="4" disabled>sin_ref (n/a)</option>
+                          <option  value="5" disabled>cos_1f (n/a)</option>
                           <option  value="6">aux_A</option>
                           <option  value="7">Ramp A</option>
                         </select>
@@ -5293,7 +5779,7 @@
                           <option  value="2">Yo</option>
                           <option  value="3">X2o</option>
                           <option  value="4">Y2o</option>
-                          <option  value="5">F3o</option>
+                          <option  value="5" disabled>F3o (n/a)</option>
                           <option  value="6">in1</option>
                           <option  value="7">in1-in2</option>
                         </select>
@@ -5341,7 +5827,7 @@
                               <option data-tag="pidA_more" value="2">Yo</option>
                               <option data-tag="pidA_more" value="3">X2o</option>
                               <option data-tag="pidA_more" value="4">Y2o</option>
-                              <option data-tag="pidA_more" value="5">F3o</option>
+                              <option data-tag="pidA_more" value="5" disabled>F3o (n/a)</option>
                               <option data-tag="pidA_more" value="6">signal_i</option>
                               <option data-tag="pidA_more" value="7">signal2_i</option>
                               <option data-tag="pidA_more" value="8">in1-in2</option>
@@ -5350,7 +5836,7 @@
                               <option data-tag="pidA_more" value="11">aux_A</option>
                               <option data-tag="pidA_more" value="12">aux_B</option>
                               <option data-tag="pidA_more" value="13">cos_ref</option>
-                              <option data-tag="pidA_more" value="14">sin_ref</option>
+                              <option data-tag="pidA_more" value="14" disabled>sin_ref (n/a)</option>
                               <option data-tag="pidA_more" value="15">0</option>
                             </select>
                           </div>
@@ -5608,7 +6094,7 @@
                               <option data-tag="pidB_more" value="2">Yo</option>
                               <option data-tag="pidB_more" value="3">X2o</option>
                               <option data-tag="pidB_more" value="4">Y2o</option>
-                              <option data-tag="pidB_more" value="5">F3o</option>
+                              <option data-tag="pidB_more" value="5" disabled>F3o (n/a)</option>
                               <option data-tag="pidB_more" value="6">signal_i</option>
                               <option data-tag="pidB_more" value="7">signal2_i</option>
                               <option data-tag="pidB_more" value="8">in1-in2</option>
@@ -5617,7 +6103,7 @@
                               <option data-tag="pidB_more" value="11">aux_A</option>
                               <option data-tag="pidB_more" value="12">aux_B</option>
                               <option data-tag="pidB_more" value="13">cos_ref</option>
-                              <option data-tag="pidB_more" value="14">sin_ref</option>
+                              <option data-tag="pidB_more" value="14" disabled>sin_ref (n/a)</option>
                               <option data-tag="pidB_more" value="15">0</option>
                             </select>
                           </div>

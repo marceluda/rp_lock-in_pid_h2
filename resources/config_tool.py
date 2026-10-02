@@ -1496,6 +1496,11 @@ for r in h:
 
 
 
+# Muxer signals that are tied to 14'b0 in this App (lock.v, "LOLO ERASE" block and F3o: gen_mod_h2 only
+# generates cos_ref, cos_A/sin_A and cos_B/sin_B). Their <option> is kept (same value and order, so
+# indexes and saved configs stay valid) but it is rendered disabled and labeled " (n/a)".
+NA_SIGNALS = ['sin_ref', 'cos_1f', 'cos_2f', 'cos_3f', 'F3o']   # F3o: assign F3o = 14'b0
+
 class select():
     def __init__(self,idd,items=[],vals=[],default=0):
         self.id      = idd
@@ -1524,7 +1529,9 @@ class select():
         for i,v in enumerate(self.vals):
             sel=' selected="selected"' if v==self.default else ''
             dtag = ' data-tag="{:}"'.format(self.hide_group) if (v in self.hide) else ' '
-            if self.enable[i]:
+            if self.enable[i] and self.items[i] in NA_SIGNALS:
+                txt.add('<option'+dtag+' value="{:d}"{:s} disabled>{:s} (n/a)</option>'.format(v,sel,self.items[i]))
+            elif self.enable[i]:
                 txt.add('<option'+dtag+' value="{:d}"{:s}>{:s}</option>'.format(v,sel,self.items[i]))
             else:
                 txt.add('<!--option value="{:d}{:s}">{:s}</option-->'.format(v,sel,self.items[i]))
