@@ -134,6 +134,15 @@
   var post_inflight = 0;                 // POST /data requests in flight (postParamsChunks, probeApp)
   var last_post_end = 0;                 // Date.now() when the last POST /data ended
   var post_overlap_ms = 200;
+  // Anti-loop guard of sendParams(). A NaN in params.local (config without some keys -> <select> without selection)
+  // once made an endless loop of POSTs (~15/s) that filled the fds of the nginx worker (CLOSE-WAIT) and killed it.
+  // A POST without any real change (only always_send_params) less than post_min_gap_ms after the end of the
+  // previous POST is not sent, and at most post_max_per_s POSTs per second are sent (more are deferred, console.warn).
+  var post_min_gap_ms = 200;
+  var post_max_per_s = 10;
+  var post_starts = [];                  // Date.now() of the POSTs started by sendParams() in the last second
+  var post_rate_timer = null;            // Deferred sendParams() (post_max_per_s reached)
+  var post_rate_args = null;             // Its arguments (OR of the deferred calls)
   // Cautious mode (2.0): a slow/failed /get_client_id means nginx is busy, usually an App change in progress
   // (main_menu loading). A GET /data then may hit main_menu and crash the nginx worker (signal 11). A single
   // slow/failed answer is retried at once (checkClaimConfirm, no GET /data meanwhile); if the retry is slow or
@@ -1863,7 +1872,10 @@
 
     if (params.local){
         for ( i in lpfs){
-          params.local[lpfs[i]]        = parseInt($('#'+lpfs[i]       ).val());
+          // A <select> without selection (val() null) gives NaN: keep params.local and show its value again
+          var lv = parseInt($('#'+lpfs[i]).val());
+          if(isFinite(lv)) params.local[lpfs[i]] = lv;
+          else if(isSendable(params.local[lpfs[i]])) $('#'+lpfs[i]).val(params.local[lpfs[i]]);
         }
 
         sendParams(true);
@@ -2304,7 +2316,7 @@
     if(disp_stream){
         //var stream_status    = params.local.lock_stream_status ;
         //var stream_rate      = params.local.lock_stream_rate ;
-        $('#disp_stream_status' ).html( 'Δt: '+8*params.local.lock_stream_rate + ' ns' );
+        $('#disp_stream_status' ).html( 'Δt: '+8*display_val('lock_stream_rate') + ' ns' );
     }
 
 
@@ -2362,7 +2374,7 @@
     }
 
 
-    var error_mean = params.local.lock_error_mean;
+    var error_mean = display_val('lock_error_mean');
 
     if(isNaN(params.local.lock_error_std))
       var error_std  = 0;
@@ -3202,7 +3214,8 @@
     // if ( $.inArray( param_name, [ 'lock_lpf_F0_tau', 'lock_lpf_F0_order', 'lock_lpf_F1_tau', 'lock_lpf_F1_order', 'lock_lpf_F2_tau', 'lock_lpf_F2_order', 'lock_lpf_F3_tau', 'lock_lpf_F3_order' ] )>-1 ) lpf_update();
     if ( $.inArray( param_name, [ 'lock_lpf_F0_tau', 'lock_lpf_F0_order', 'lock_lpf_F1_tau', 'lock_lpf_F1_order' ] )>-1 ) lpf_update();
 
-    params.local[param_name] = parseInt(that.val());
+    var dv = parseInt(that.val());
+    if(isFinite(dv)) params.local[param_name] = dv;  // a <select> without selection gives NaN: not copied
     sendParams(do_get);
     that.blur();
     user_editing = false;
@@ -3323,7 +3336,7 @@
     for(var k in srv) {
       if(unsent_skip_keys.indexOf(k) >= 0) continue;
       var v = params.local[k];
-      if(v === undefined) continue;
+      if(!isSendable(v)) continue;  // NaN/undefined/null/Infinity: never sent (splitParams), so never pending
       if(v != unsent_base[k] && v != srv[k]) ch[k] = v;  // same loose comparison as isParamChanged()
     }
     return ch;
@@ -3334,6 +3347,15 @@
   function loadParams(orig_params, keep_unsent) {
     if(! $.isPlainObject(orig_params)) {
       return;
+    }
+
+    // Keys missing in orig_params (a config of another App or of an older version, e.g. without lock_lpf_*):
+    // keep the current values, so their controls and params.local do not change. .val(undefined) used to leave
+    // a <select> without selection, lpf_update() copied NaN to params.local and the POSTs never ended.
+    if(params.local) {
+      for(var mk in params.local) {
+        if(orig_params[mk] === undefined || orig_params[mk] === null) orig_params[mk] = params.local[mk];
+      }
     }
 
     // Keys missing in orig_params (a saved config does not have the read-only values): keep the previous ones
@@ -3659,7 +3681,7 @@
   function isParamChanged() {
     if(params.original) {
       for(var key in params.original) {
-        if(params.original[key] != params.local[key]) {
+        if(params.original[key] != params.local[key] && isSendable(params.local[key])) {
           return true;
         }
       }
@@ -3670,6 +3692,26 @@
   // Split a params object in several objects, so that the JSON body of each POST
   // is smaller than post_max_bytes. Keys in last_send_params go in the last one.
   // Only finite numeric values are sent: null/bool/strings crash (2.0) or hang (0.9x) the nginx worker.
+  // Numeric value that splitParams() would send, NaN if it would not send it (NaN, undefined, null, Infinity, bool...)
+  function sendableValue(raw) {
+    var v = (typeof raw === 'number' || (typeof raw === 'string' && raw.trim() !== '')) ? Number(raw) : NaN;
+    return isFinite(v) ? v : NaN;
+  }
+
+  function isSendable(raw) {
+    return !isNaN(sendableValue(raw));
+  }
+
+  // true if params.local has a change that would really be sent: a sendable value that differs from params.original
+  function hasRealChange() {
+    if(!params.local) return false;
+    for(var key in params.local) {
+      if((!params.original || params.original[key] != params.local[key]) && isSendable(params.local[key]))
+        return true;
+    }
+    return false;
+  }
+
   function splitParams(p) {
     var chunks = [];
     var chunk = {};
@@ -3690,8 +3732,8 @@
 
     for(var i = 0; i < keys.length; i++) {
       var raw = p[keys[i]];
-      var v = (typeof raw === 'number' || (typeof raw === 'string' && raw.trim() !== '')) ? Number(raw) : NaN;
-      if(!isFinite(v)) {
+      var v = sendableValue(raw);
+      if(isNaN(v)) {
         console.warn('splitParams: skipping non-numeric param', keys[i], raw);
         continue;
       }
@@ -3767,6 +3809,33 @@
       if(sending && send_all === true) send_que_all = true;  // the queued call must send all too
       return;
     }
+
+    // Anti-loop guard (see post_min_gap_ms): nothing really changed and the previous POST ended a moment ago
+    var now_ms = Date.now();
+    if(send_all !== true && single_btn !== true && !hasRealChange() &&
+       last_post_end > 0 && now_ms - last_post_end < post_min_gap_ms) {
+      console.log('sendParams: no real change ' + (now_ms - last_post_end) + ' ms after the last POST: not sent');
+      if(user_editing_update) user_editing = editFocusActive();
+      return;
+    }
+    // Rate limit: at most post_max_per_s POSTs per second, the rest are deferred (merged in one call)
+    while(post_starts.length && now_ms - post_starts[0] >= 1000) post_starts.shift();
+    if(post_starts.length >= post_max_per_s) {
+      var rargs = [refresh_data, force_send, single_btn, user_editing_update, send_all];
+      if(post_rate_args) for(var ri = 0; ri < rargs.length; ri++) rargs[ri] = (post_rate_args[ri] === true || rargs[ri] === true);
+      post_rate_args = rargs;
+      if(!post_rate_timer) {
+        console.warn('sendParams: more than ' + post_max_per_s + ' POST/s, the next one is deferred');
+        post_rate_timer = setTimeout(function() {
+          var a = post_rate_args;
+          post_rate_timer = null;
+          post_rate_args = null;
+          sendParams.apply(null, a);
+        }, Math.max(1, 1000 - (now_ms - post_starts[0])));
+      }
+      return;
+    }
+    post_starts.push(now_ms);
 
     var auto_flag = params.local.auto_flag;  // Keep the value of auto_flag, because in POST response it is always 0
     sending = true;
