@@ -1,112 +1,27 @@
-# RP Lock-in+PID Harmonic
-Documentation for Lock-in and PID application for RedPitaya enviroment
+# RP TWO Lock-in+PID Harmonic — documentation
 
+Documentation of `lock_in+pid_harmonic2` **v2.4.4** (branch `devel2.0`, Ecosystem 2.0, FPGA built with
+Vivado 2020.1): the App `lock_in+pid_harmonic` 2.3.17 with **two lock-in amplifiers** (one modulation generator,
+two pairs of references with independent phases, two inputs). Back to the [project README](../README.md) ·
+[CHANGELOG](../CHANGELOG.md).
 
+| Document | Contents |
+|---|---|
+| [App.md](App.md) | The instruments of the App and their technical data: frequencies, the two lock-ins, filters, gains, ranges, time spans, measured lock performance; what is different from `lock_in+pid_harmonic` |
+| [Usage.md](Usage.md) | The web interface panel by panel (tabs LI A / LI B, Phase A / B, "(n/a)" options), the procedures (scan, lock-ins, close and check a lock, second lock-in while locked), configs |
+| [Structure.md](Structure.md) | How the web page, the server (nginx + `controllerhf.so`) and the FPGA work together; block diagrams of the FPGA, of the generator and of the demodulation lines |
+| [FPGA.md](FPGA.md) | Register map of the lock module (102 registers, shifted from `_h` after 0x054) and of the oscilloscope, bit fields and selector values |
+| [Remote.md](Remote.md) | Remote control over HTTP (`/lock`, `/osc`, `/data`) with Python (`control_finn.py`, `line='A'\|'B'`) examples; known issue of `POST /data`; tools and scripts on the board |
+| [Devel.md](Devel.md) | Source tree, requirements, building (C, `c/` tools, FPGA), tests, installation |
 
-## Registers
+Design notes kept with the sources (`lock_in+pid_harmonic2/doc/`):
 
-|name               |index|signed|read_only|min        |max       |
-|-------------------|-----|------|---------|-----------|----------|
-|oscA_sw            |0    |0     |0        |0          |31        |
-|oscB_sw            |1    |0     |0        |0          |31        |
-|osc_ctrl           |2    |0     |0        |0          |4294967295|
-|trig_sw            |3    |0     |0        |0          |255       |
-|out1_sw            |4    |0     |0        |0          |15        |
-|out2_sw            |5    |0     |0        |0          |15        |
-|lock_control       |6    |0     |0        |0          |2047      |
-|lock_feedback      |7    |0     |1        |0          |2047      |
-|lock_trig_val      |8    |1     |0        |-8192      |8191      |
-|lock_trig_time     |9    |0     |0        |0          |4294967295|
-|lock_trig_sw       |10   |0     |0        |0          |15        |
-|rl_error_threshold |11   |0     |0        |0          |8191      |
-|rl_signal_sw       |12   |0     |0        |0          |7         |
-|rl_signal_threshold|13   |1     |0        |-8192      |8191      |
-|rl_config          |14   |0     |0        |0          |7         |
-|rl_state           |15   |0     |1        |0          |31        |
-|sf_jumpA           |16   |1     |0        |-8192      |8191      |
-|sf_jumpB           |17   |1     |0        |-8192      |8191      |
-|sf_config          |18   |0     |0        |0          |31        |
-|signal_sw          |19   |0     |0        |0          |7         |
-|signal_i           |20   |1     |1        |-8192      |8191      |
-|signal2_sw         |21   |0     |0        |0          |7         |
-|signal2_i          |22   |1     |1        |-8192      |8191      |
-|sg_amp0            |23   |0     |0        |0          |31        |
-|sg_amp1            |24   |0     |0        |0          |15        |
-|sg_amp2            |25   |0     |0        |0          |15        |
-|sg_amp3            |26   |0     |0        |0          |15        |
-|lpf_F0             |27   |0     |0        |0          |63        |
-|lpf_F1             |28   |0     |0        |0          |63        |
-|lpf_F2             |29   |0     |0        |0          |63        |
-|lpf_F3             |30   |0     |0        |0          |63        |
-|error_sw           |31   |0     |0        |0          |7         |
-|error_offset       |32   |1     |0        |-8192      |8191      |
-|error              |33   |1     |1        |-8192      |8191      |
-|error_mean         |34   |1     |1        |-2147483648|2147483647|
-|error_std          |35   |1     |1        |-2147483648|2147483647|
-|mod_out1           |36   |1     |0        |-8192      |8191      |
-|mod_out2           |37   |1     |0        |-8192      |8191      |
-|gen_mod_phase_A    |38   |0     |0        |0          |2519      |
-|gen_mod_phase_B    |39   |0     |0        |0          |2519      |
-|gen_mod_hp         |40   |0     |0        |0          |16383     |
-|ramp_A             |41   |1     |1        |-8192      |8191      |
-|ramp_B             |42   |1     |1        |-8192      |8191      |
-|ramp_step          |43   |0     |0        |0          |4294967295|
-|ramp_low_lim       |44   |1     |0        |-8192      |8191      |
-|ramp_hig_lim       |45   |1     |0        |-8192      |8191      |
-|ramp_reset         |46   |0     |0        |0          |1         |
-|ramp_enable        |47   |0     |0        |0          |1         |
-|ramp_direction     |48   |0     |0        |0          |1         |
-|ramp_sawtooth      |49   |0     |0        |0          |1         |
-|ramp_B_factor      |50   |1     |0        |-4096      |4096      |
-|cos_ref            |51   |1     |1        |-8192      |8191      |
-|cos_A              |52   |1     |1        |-8192      |8191      |
-|sin_A              |53   |1     |1        |-8192      |8191      |
-|cos_B              |54   |1     |1        |-8192      |8191      |
-|sin_B              |55   |1     |1        |-8192      |8191      |
-|in1                |56   |1     |1        |-8192      |8191      |
-|in2                |57   |1     |1        |-8192      |8191      |
-|out1               |58   |1     |1        |-8192      |8191      |
-|out2               |59   |1     |1        |-8192      |8191      |
-|oscA               |60   |1     |1        |-8192      |8191      |
-|oscB               |61   |1     |1        |-8192      |8191      |
-|X_28               |62   |1     |1        |-134217728 |134217727 |
-|Y_28               |63   |1     |1        |-134217728 |134217727 |
-|X2_28              |64   |1     |1        |-134217728 |134217727 |
-|Y2_28              |65   |1     |1        |-134217728 |134217727 |
-|F3_28              |66   |1     |1        |-134217728 |134217727 |
-|cnt_clk            |67   |0     |1        |0          |4294967295|
-|cnt_clk2           |68   |0     |1        |0          |4294967295|
-|read_ctrl          |69   |0     |0        |0          |7         |
-|pidA_sw            |70   |0     |0        |0          |31        |
-|pidA_PSR           |71   |0     |0        |0          |4         |
-|pidA_ISR           |72   |0     |0        |0          |9         |
-|pidA_DSR           |73   |0     |0        |0          |5         |
-|pidA_SAT           |74   |0     |0        |0          |13        |
-|pidA_sp            |75   |1     |0        |-8192      |8191      |
-|pidA_kp            |76   |1     |0        |-8192      |8191      |
-|pidA_ki            |77   |1     |0        |-8192      |8191      |
-|pidA_kd            |78   |1     |0        |-8192      |8191      |
-|pidA_in            |79   |1     |1        |-8192      |8191      |
-|pidA_out           |80   |1     |1        |-8192      |8191      |
-|pidA_ctrl          |81   |0     |0        |0          |7         |
-|ctrl_A             |82   |1     |1        |-8192      |8191      |
-|pidB_sw            |83   |0     |0        |0          |31        |
-|pidB_PSR           |84   |0     |0        |0          |4         |
-|pidB_ISR           |85   |0     |0        |0          |9         |
-|pidB_DSR           |86   |0     |0        |0          |5         |
-|pidB_SAT           |87   |0     |0        |0          |13        |
-|pidB_sp            |88   |1     |0        |-8192      |8191      |
-|pidB_kp            |89   |1     |0        |-8192      |8191      |
-|pidB_ki            |90   |1     |0        |-8192      |8191      |
-|pidB_kd            |91   |1     |0        |-8192      |8191      |
-|pidB_in            |92   |1     |1        |-8192      |8191      |
-|pidB_out           |93   |1     |1        |-8192      |8191      |
-|pidB_ctrl          |94   |0     |0        |0          |7         |
-|ctrl_B             |95   |1     |1        |-8192      |8191      |
-|aux_A              |96   |1     |0        |-8192      |8191      |
-|aux_B              |97   |1     |0        |-8192      |8191      |
-|stream_ip          |98   |0     |0        |0          |4294967295|
-|stream_port        |99   |0     |0        |0          |4294967295|
-|stream_rate        |100  |0     |0        |0          |65536     |
-|stream_cmd         |101  |0     |0        |0          |4294967295|
+- [`lock_control.md`](../lock_in+pid_harmonic2/doc/lock_control.md): the lock control (`lock_control` /
+  `lock_status`, state machine in the FPGA, locking from Python).
+- [`lock_capture.md`](../lock_in+pid_harmonic2/doc/lock_capture.md): *Capture Lock* and *Fire on click*.
 
+The register table that this file had before (a copy of an old `c/lock.txt`) is now [FPGA.md](FPGA.md), checked
+against the RTL.
+
+Screenshots of the web interface are in the hidden folder `.Usage/`, and the figures of the remote control in
+`.Remote/` (names starting with `h_`: taken with `lock_in+pid_harmonic`, same code for those panels).

@@ -115,3 +115,11 @@ v2.4.4
 - Tests (lock_in+pid_harmonic2/test/): xsim lock_ctrl_sim.sh and lock_bus_read_sim.sh; node lock_ctrl_ui_sim.js,
   lock_capture_ui_sim.js, trig_input_units_sim.js, config_load_window_sim.js, trig_from_graph_sim.js;
   auto_set_c_sim/run.sh (controller C on the PC)
+
+Documentation (after v2.4.4, no change of code)
+- ADDED doc/App.md, doc/Usage.md, doc/Structure.md (Mermaid diagrams), doc/FPGA.md (the 102 registers of this App,
+  checked against lock.v), doc/Remote.md, doc/Devel.md, based on the documentation of lock_in+pid_harmonic 2.3.17
+  and adapted to the two lock-ins; screenshots in doc/.Usage/ and doc/.Remote/
+- CHANGED doc/README.md is now an index (its old register table, of an older lock.txt, is replaced by doc/FPGA.md);
+  README.md rewritten (summary of 2.4.x, documentation table, installation, building, license); the detailed
+  requirements moved to doc/Devel.md and the version history stays in this file

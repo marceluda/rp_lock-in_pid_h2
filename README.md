@@ -1,12 +1,19 @@
 # Red Pitaya Lock-in+PID Application with HARMONIC modulation with TWO demodulation channels
 
+This project is based in [lock-in+PID Harmonic](https://github.com/marceluda/rp_lock-in_pid_h).
 
-This project is based in [lock-in+PID Harmonic](https://github.com/marceluda/rp_lock-in_pid_h)
-
+It is an application for the [Red Pitaya STEMlab 125-14](https://www.redpitaya.com/) board (RP): a set of
+instruments built in the FPGA (oscilloscope, **two harmonic lock-in amplifiers**, two PIDs, ramp generator and
+automatic lock control) to measure a system with modulation techniques and stabilize it with a feedback loop,
+controlled from a web page or remotely over HTTP. One modulation generator gives the reference added to the
+outputs and two pairs of demodulation references with independent phases, so two signals (or the same signal at
+two phases) are demodulated at the same time.
 
 Video from lock-in+PID Harmonic version:
 
 [![Example of usage](http://img.youtube.com/vi/330eYE75MYQ/0.jpg)](http://www.youtube.com/watch?v=330eYE75MYQ "Fast demosatration of usage")
+
+![Lock captured by the App (v2.4.4): one click on the error fires the lock, t = 0 is the closing of the loop](.README/lock_captured_v2.4.4.jpg)
 
 
 ## Version 2.4.x (Ecosystem 2.0)
@@ -15,41 +22,40 @@ Current version: **2.4.4** (branch `devel2.0`).
 
 This version is **based on the 0.4.x series (v0.4.2), with the FPGA design built in Vivado 2020.1**,
 using the project structure of [RedPitaya-FPGA](https://github.com/RedPitaya/RedPitaya-FPGA)
-(project `v0.94`, model `Z10`), the same port done in
-[rp_lock-in_pid_h](https://github.com/marceluda/rp_lock-in_pid_h) v2.3.x (its v2.3.10 and v2.3.11, plus
-the bus read fix of its v2.3.17, in v2.4.3) and all the changes of its v2.3.12 to v2.3.17 (lock sequence in the FPGA,
-Capture Lock, HTTP remote control on Ecosystem 2.0..., in v2.4.4). It is intended for the Red Pitaya **Ecosystem 2.0**
-(e.g. `RedPitaya_OS_2.04`).
-The 0.4.x series (branch `master`, FPGA with Vivado 2015.2) is the version for the 0.9x / 1.0 ecosystems.
+(project `v0.94`, model `Z10`). It is intended for the Red Pitaya **Ecosystem 2.0**
+(e.g. `RedPitaya_OS_2.04`; tested on 2.04-35). The 0.4.x series (branch `master`, FPGA with Vivado 2015.2) is the
+version for the 0.9x / 1.0 ecosystems.
 
-- TWO lock-ins: the modulation generator `gen_mod_h2` gives `cos_ref` and two pairs of references,
-  `cos_A`/`sin_A` (phase `gen_mod_phase_A`) and `cos_B`/`sin_B` (phase `gen_mod_phase_B`), that demodulate
-  `signal_i` (X, Y) and `signal2_i` (X2, Y2). Register map of v0.4.2, except 0x1C (`lock_status` since v2.4.4).
-- FPGA: `lock_in+pid_harmonic2/fpga/` (Vivado 2020.1, see
-  [lock_in+pid_harmonic2/fpga/README.md](lock_in+pid_harmonic2/fpga/README.md)). Oscilloscope of the
-  Ecosystem 2.0 (trigger lock, decimation widened to 20 bits), bus reads of the lock module held during the
-  read.
-- Only the App itself is packaged (the `_DEBUG` and `_RELOAD` flavours were removed).
-- Lock control in the FPGA (`lock_status` at 0x1C replaces `lock_feedback`): see
-  [lock_control.md](lock_in+pid_harmonic2/doc/lock_control.md) and [lock_capture.md](lock_in+pid_harmonic2/doc/lock_capture.md).
-- Remote control from a PC over HTTP: `resources/remote_control/http_version/control_finn.py` and
-  `example_usage.py` (both lock-ins: `set_phase(val, line='A'|'B')`, `set_signal()`, `set_gain()`, `set_lpf()`,
-  `get_XY(F=True)` -> X, Y, X2, Y2).
+- v2.4.3: the port of [rp_lock-in_pid_h](https://github.com/marceluda/rp_lock-in_pid_h) v2.3.10-2.3.11 (FPGA in
+  Vivado 2020.1, oscilloscope of the Ecosystem 2.0 with time ranges up to ~68 s, streaming and UI fixes) plus the
+  exact bus reads of its v2.3.17, keeping the two lock-ins; streaming register offsets generated from `c/lock.txt`;
+  only the App itself is packaged.
+- v2.4.4: the changes of `rp_lock-in_pid_h` v2.3.12-2.3.17: **lock sequence in the FPGA** (`lock_control` 0x18
+  command + configuration, read-only `lock_status` 0x1C), **Capture Lock** and **Fire on click**, Time / Level
+  trigger fields with units, 32-bit time trigger (34.36 s), Config → load with the right time window, and the
+  **HTTP remote control on Ecosystem 2.0** with `control_finn.py` adapted to the two lock-ins
+  (`set_phase(val, line='A'|'B')`, `set_signal()`, `set_gain()`, `set_lpf()`, `get_XY(F=True)` → X, Y, X2, Y2).
+- Tested on the board against a simulated peak: locks with time, level and immediate trigger, both lock-ins,
+  scope, bus reads, remote control and streaming ([doc/App.md](doc/App.md#lock-control-auto-lock)).
 - See the [CHANGELOG](CHANGELOG.md).
+
+**Register map.** The lock module has 102 registers; from `0x054` on the addresses are shifted with respect to
+`rp_lock-in_pid_h` (`signal2_sw`, `signal2_i`, `gen_mod_phase_A/_B`). Use register names, not offsets:
+[doc/FPGA.md](doc/FPGA.md).
 
 
 ## Features
 
-- **TWO** Lock-in amplifier
-- in-phase and quadrature Demodulation
-  - Demodulation for arbitrary phase
-  - Demodulatión for double and triple frequency
+- **TWO** lock-in amplifiers (A: X, Y of `signal_i`; B: X2, Y2 of `signal2_i`)
+  - in-phase and quadrature demodulation
+  - independent phase, input, low-pass filter (1st/2nd order, 131 µs .. 4.3 s) and gain for each lock-in
+- Harmonic modulation from 3 Hz to 49.6 kHz, added to the outputs
 - Two PID filters, for loop back stabilization
 - Ramp/Scan controller for response analysis
-- Lock control for automatic scan-stop / PID start
+- Lock control for automatic scan-stop / PID start (time, level or immediate trigger, run by the FPGA)
+- Two-channel oscilloscope on any internal signal, triggered by internal events (scan floor, lock, ...)
 - Streaming system for continued acquisition of two channels
 - Remote control through HTTP API
- 
 
 **More decimaion values**
 
@@ -67,144 +73,77 @@ The 0.4.x series (branch `master`, FPGA with Vivado 2015.2) is the version for t
 | 524288 |          68.719476736 s |
 
 
-## Lock-in and PID application for RedPitaya environment
+## Documentation
 
-This is an application built for the [Red Pitaya STEMlab 125-14](https://www.redpitaya.com/) board (RP).
-The board is closed-hardware and open-software. You can buy the board and build your own software.
+| Document | Contents |
+|---|---|
+| [doc/App.md](doc/App.md) | Instruments and technical data; differences with `lock_in+pid_harmonic` |
+| [doc/Usage.md](doc/Usage.md) | Web interface and procedures (scan, lock-ins, lock), with screenshots |
+| [doc/Structure.md](doc/Structure.md) | Web page ↔ server ↔ FPGA, block diagrams |
+| [doc/FPGA.md](doc/FPGA.md) | Register map |
+| [doc/Remote.md](doc/Remote.md) | Remote control over HTTP, Python examples |
+| [doc/Devel.md](doc/Devel.md) | Building, modifying and testing |
+| [CHANGELOG.md](CHANGELOG.md) | Changes by version |
 
-If you have a RP board you can install the **Lock-in+PID** application
-by copying the `lock_in+pid_harmonic2` folder (that comes with this tar/zip file) to the
-`/opt/redpitaya/www/apps` folder (inside the RP).
-
-For more information about installing procedure, refer to:
-https://marceluda.github.io/rp_lock-in_pid/TheApp/install/
-
-
-# Development
-
-To build of modify the App you need a linux development environment with:
-  - Vivado 2020.1 (FPGA and `bootgen`; `lock_in+pid_harmonic2/fpga/Makefile` loads
-    `/tools/Xilinx/Vivado/2020.1/settings64.sh` by itself, override with `VIVADO_SETTINGS=...`)
-  - gcc-linaro-4.9-2015.02-3-x86_64_arm-linux-gnueabihf (installed on `/opt/linaro/gcc-linaro-4.9-2015.02-3-x86_64_arm-linux-gnueabihf/`)
-  - (the 0.4.x series, branch `master`, used Vivado 2015.2)
+The concepts of the instruments are also explained in the documentation of the original App:
+https://marceluda.github.io/rp_lock-in_pid/
 
 
-The App was based on code from project:
-https://github.com/RedPitaya/RedPitaya/tree/release-v0.95/apps-free/scope
+## Installation
 
-## Software requirements
+If you have a RP board you can install the **TWO Lock-in+PID** application by copying the
+`lock_in+pid_harmonic2` folder (that comes with the tar/zip package) to the `/opt/redpitaya/www/apps` folder
+(inside the RP).
 
-You will need the following to build the Red Pitaya components:
-
-1. Various development packages:
-
-```bash
-sudo apt-get install make u-boot-tools curl xz-utils nano
-```
-
-2. a. Xilinx [Vivado 2015.2](https://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/vivado-design-tools/archive.html) FPGA development tools. The SDK (bare metal toolchain) must also be installed, be careful during the install process to select it. Preferably use the default install location.
-
-2. b. The new OS version 2.0 requires a command that is included in more recent version of Vivado: Xilinx [Vivado 2020.1](https://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/vivado-design-tools/archive.html). More info in [Red Pitaya documentation](https://redpitaya-knowledge-base.readthedocs.io/en/latest/learn_fpga/3_vivado_env/tutorfpga1.html)
-
-3. Linaro [ARM toolchain](https://releases.linaro.org/14.11/components/toolchain/binaries/arm-linux-gnueabihf/) for cross compiling Linux applications. We recommend to install it to `/opt/linaro/` since build process instructions relly on it.
-
-```bash
-# TOOLCHAIN="http://releases.linaro.org/14.11/components/toolchain/binaries/arm-linux-gnueabihf/gcc-linaro-4.9-2014.11-x86_64_arm-linux-gnueabihf.tar.xz"
-TOOLCHAIN="http://releases.linaro.org/15.02/components/toolchain/binaries/arm-linux-gnueabihf/gcc-linaro-4.9-2015.02-3-x86_64_arm-linux-gnueabihf.tar.xz"
-curl -O $TOOLCHAIN
-sudo mkdir -p /opt/linaro
-sudo chown $USER:$USER /opt/linaro
-tar -xpf *linaro*.tar.xz -C /opt/linaro
-```
-
-
-**NOTE:** you can skip installing Vivado tools, if you only wish to compile user space software.
-
-4. Missing `gmake` path
-
-Vivado requires a `gmake` executable which does not exist on Ubuntu. It is necessary to create a symbolic link to the regular `make` executable.
-
-```bash
-sudo ln -s /usr/bin/make /usr/bin/gmake
-```
-
-5. On Ubuntu Linux you also need:
-
-```bash
-sudo apt-get install make u-boot-tools curl xz-utils
-sudo apt-get install libx32gcc-4.8-dev
-sudo apt-get install libc6-dev-i386
-```
-
-The building was tested on Ubuntu 24.04.02 Linux x86_64 
-
-
-## Building
-
-
-
-Run on terminal:
-
-```bash
-source settings.sh
-make
-```
-
-Or form App folder `lock_in+pid_harmonic2` :
-
-```bash
-source ../settings.sh
-```
-
-
-and then...
-
-For web controller building:
-
-```bash
-make app
-```
-
-For FPGA implementation (Vivado 2020.1, RedPitaya-FPGA structure; also from `lock_in+pid_harmonic2/fpga` with `make`):
-
-```bash
-make fpga
-```
-
-
-For tar.gz packaging
-
-```bash
-make tar
-```
-
-For cleaning:
-
-```bash
-make clean       # clean all
-make clean_app   # clean only C objects
-make clean_fpga  # clean only FPGA implementation temp files and .bin
-```
-
-
-# Upload App to Red Pitaya device
-
-UnZip / UnTar the App folder. Execute from terminal:
+The packages are built in `archive/` (`lock_in+pid_harmonic2-<version>-<build>-devbuild.{zip,tar.gz}`).
+UnZip / UnTar the package and execute from terminal:
 
 ```bash
 ./upload_app.sh rp-XXXXXX.local
 ```
 
-Replace `rp-XXXXXX.local` by your RP localname or IP address
+Replace `rp-XXXXXX.local` by your RP localname or IP address. Also, you can use your own SSH client and
+upload the `lock_in+pid_harmonic2` folder to the RedPitaya folder `/opt/redpitaya/www/apps` (file system in
+read-write mode, `fpga.sh` executable). Then open `http://rp-XXXXXX.local/lock_in+pid_harmonic2/`.
 
-Or, from the App folder of the sources (builds `target/` first):
+For more information about installing procedure, refer to:
+https://marceluda.github.io/rp_lock-in_pid/TheApp/install/ and [doc/Devel.md](doc/Devel.md#installing-on-the-board).
+
+
+## Building
+
+To build or modify the App you need a linux development environment with:
+  - Vivado 2020.1 (FPGA and `bootgen`), in `/tools/Xilinx/Vivado/2020.1` (`lock_in+pid_harmonic2/fpga/Makefile`
+    loads it by itself; override with `VIVADO_SETTINGS=...`)
+  - gcc-linaro-4.9-2015.02-3-x86_64_arm-linux-gnueabihf (installed on `/opt/linaro/`)
+  - (the 0.4.x series, branch `master`, used Vivado 2015.2; `settings.sh` still sources it if present)
+
+The App was based on code from project:
+https://github.com/RedPitaya/RedPitaya/tree/release-v0.95/apps-free/scope
+
+Run on terminal:
 
 ```bash
-make upload RPIP=rp-XXXXXX.local        # whole App
-make upload_html RPIP=rp-XXXXXX.local   # only index.html, js, css
+source settings.sh
+LANG=C make          # controller, c/ tools, FPGA (if changed) and packages in archive/
 ```
 
-Then stop and start the App (or open it from the menu) so that the new controller and FPGA are loaded.
+Parts (from the root folder):
 
-Also, you can use your own SSH client and upload the `lock_in+pid_harmonic2` folder the the
-RedPiaya folder: `/opt/redpitaya/www/apps`
+```bash
+make -C lock_in+pid_harmonic2 app        # C controller + c/ tools (cross compiled)
+make -C lock_in+pid_harmonic2 c_tools    # only the c/ tools (lock, osc, streaming)
+make -C lock_in+pid_harmonic2 fpga       # FPGA with Vivado 2020.1 (red_pitaya.bit, fpga.bit.bin)
+make clean                               # clean all (also: clean_app, clean_fpga in lock_in+pid_harmonic2)
+make -C lock_in+pid_harmonic2 upload RPIP=rp-XXXXXX.local        # whole App to a board
+make -C lock_in+pid_harmonic2 upload_html RPIP=rp-XXXXXX.local   # only index.html, js, css
+```
+
+After an upload, stop and start the App (or open it from the menu) so that the new controller and FPGA are
+loaded. Requirements, all the targets, tests and details: [doc/Devel.md](doc/Devel.md).
+
+
+## License and citation
+
+GPL-3.0 (see [LICENSE](LICENSE)). If you use this software, please cite it (see [CITATION.cff](CITATION.cff)):
+M. A. Luda, doi [10.1063/1.5080345](https://doi.org/10.1063/1.5080345).
