@@ -254,7 +254,7 @@ li.add( fpga_reg(name='trig_sw'            , index=  3, rw=True , nbits= 8,signe
 li.add( fpga_reg(name='out1_sw'            , index=  4, rw=True , nbits= 4,signed=False) )
 li.add( fpga_reg(name='out2_sw'            , index=  5, rw=True , nbits= 4,signed=False) )
 li.add( fpga_reg(name='lock_control'       , index=  6, rw=True , nbits=11,signed=False) )
-li.add( fpga_reg(name='lock_feedback'      , index=  7, rw=False, nbits=11,signed=False) )
+li.add( fpga_reg(name='lock_status'        , index=  7, rw=False, nbits=16,signed=False) )
 li.add( fpga_reg(name='lock_trig_val'      , index=  8, rw=True , nbits=14,signed=True ) )
 li.add( fpga_reg(name='lock_trig_time'     , index=  9, rw=True , nbits=32,signed=False) )
 li.add( fpga_reg(name='lock_trig_sw'       , index= 10, rw=True , nbits= 4,signed=False) )
@@ -317,7 +317,7 @@ li.add( fpga_reg(name='F3_28'              , index= 66, rw=False, nbits=28,signe
 li.add( fpga_reg(name='cnt_clk'            , index= 67, rw=False, nbits=32,signed=False) )
 li.add( fpga_reg(name='cnt_clk2'           , index= 68, rw=False, nbits=32,signed=False) )
 li.add( fpga_reg(name='read_ctrl'          , index= 69, rw=True , nbits= 3,signed=False) )
-li.add( fpga_reg(name='pidA_sw'            , index= 70, rw=True , nbits= 5,signed=False) )
+li.add( fpga_reg(name='pidA_sw'            , index= 70, rw=True , nbits= 4,signed=False) )
 li.add( fpga_reg(name='pidA_PSR'           , index= 71, rw=True , nbits= 3,signed=False) )
 li.add( fpga_reg(name='pidA_ISR'           , index= 72, rw=True , nbits= 4,signed=False) )
 li.add( fpga_reg(name='pidA_DSR'           , index= 73, rw=True , nbits= 3,signed=False) )
@@ -330,7 +330,7 @@ li.add( fpga_reg(name='pidA_in'            , index= 79, rw=False, nbits=14,signe
 li.add( fpga_reg(name='pidA_out'           , index= 80, rw=False, nbits=14,signed=True ) )
 li.add( fpga_reg(name='pidA_ctrl'          , index= 81, rw=True , nbits= 3,signed=False) )
 li.add( fpga_reg(name='ctrl_A'             , index= 82, rw=False, nbits=14,signed=True ) )
-li.add( fpga_reg(name='pidB_sw'            , index= 83, rw=True , nbits= 5,signed=False) )
+li.add( fpga_reg(name='pidB_sw'            , index= 83, rw=True , nbits= 4,signed=False) )
 li.add( fpga_reg(name='pidB_PSR'           , index= 84, rw=True , nbits= 3,signed=False) )
 li.add( fpga_reg(name='pidB_ISR'           , index= 85, rw=True , nbits= 4,signed=False) )
 li.add( fpga_reg(name='pidB_DSR'           , index= 86, rw=True , nbits= 3,signed=False) )
@@ -350,6 +350,7 @@ li.add( fpga_reg(name='stream_port'        , index= 99, rw=True , nbits=32,signe
 li.add( fpga_reg(name='stream_rate'        , index=100, rw=True , nbits=17,signed=False) )
 li.add( fpga_reg(name='stream_cmd'         , index=101, rw=True , nbits=32,signed=False) )
 # [REGSET DOCK END]
+
 
 
 

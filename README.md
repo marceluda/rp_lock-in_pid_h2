@@ -11,23 +11,30 @@ Video from lock-in+PID Harmonic version:
 
 ## Version 2.4.x (Ecosystem 2.0)
 
-Current version: **2.4.3** (branch `devel2.0`).
+Current version: **2.4.4** (branch `devel2.0`).
 
 This version is **based on the 0.4.x series (v0.4.2), with the FPGA design built in Vivado 2020.1**,
 using the project structure of [RedPitaya-FPGA](https://github.com/RedPitaya/RedPitaya-FPGA)
 (project `v0.94`, model `Z10`), the same port done in
 [rp_lock-in_pid_h](https://github.com/marceluda/rp_lock-in_pid_h) v2.3.x (its v2.3.10 and v2.3.11, plus
-the bus read fix of its v2.3.17). It is intended for the Red Pitaya **Ecosystem 2.0** (e.g. `RedPitaya_OS_2.04`).
+the bus read fix of its v2.3.17, in v2.4.3) and all the changes of its v2.3.12 to v2.3.17 (lock sequence in the FPGA,
+Capture Lock, HTTP remote control on Ecosystem 2.0..., in v2.4.4). It is intended for the Red Pitaya **Ecosystem 2.0**
+(e.g. `RedPitaya_OS_2.04`).
 The 0.4.x series (branch `master`, FPGA with Vivado 2015.2) is the version for the 0.9x / 1.0 ecosystems.
 
 - TWO lock-ins: the modulation generator `gen_mod_h2` gives `cos_ref` and two pairs of references,
   `cos_A`/`sin_A` (phase `gen_mod_phase_A`) and `cos_B`/`sin_B` (phase `gen_mod_phase_B`), that demodulate
-  `signal_i` (X, Y) and `signal2_i` (X2, Y2). Registers of the lock module unchanged from v0.4.2.
+  `signal_i` (X, Y) and `signal2_i` (X2, Y2). Register map of v0.4.2, except 0x1C (`lock_status` since v2.4.4).
 - FPGA: `lock_in+pid_harmonic2/fpga/` (Vivado 2020.1, see
   [lock_in+pid_harmonic2/fpga/README.md](lock_in+pid_harmonic2/fpga/README.md)). Oscilloscope of the
   Ecosystem 2.0 (trigger lock, decimation widened to 20 bits), bus reads of the lock module held during the
   read.
 - Only the App itself is packaged (the `_DEBUG` and `_RELOAD` flavours were removed).
+- Lock control in the FPGA (`lock_status` at 0x1C replaces `lock_feedback`): see
+  [lock_control.md](lock_in+pid_harmonic2/doc/lock_control.md) and [lock_capture.md](lock_in+pid_harmonic2/doc/lock_capture.md).
+- Remote control from a PC over HTTP: `resources/remote_control/http_version/control_finn.py` and
+  `example_usage.py` (both lock-ins: `set_phase(val, line='A'|'B')`, `set_signal()`, `set_gain()`, `set_lpf()`,
+  `get_XY(F=True)` -> X, Y, X2, Y2).
 - See the [CHANGELOG](CHANGELOG.md).
 
 

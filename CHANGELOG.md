@@ -71,3 +71,47 @@ v2.4.3
   RELOAD_DOCK marks of src/main.c, fpga.bif); only the App itself is built and packaged
 - CHANGED Makefile upload targets (as lock_in+pid_harmonic v2.3.15): `make upload RPIP=...`, rw of the OS
   (2.0 and 0.9x), check_rpip, fpga.sh keeps its exec bit; settings.sh loads Vivado 2015.2 only if present
+
+v2.4.4
+- Port of the lock / web UI / controller / remote control changes of lock_in+pid_harmonic v2.3.12 to v2.3.17 (see
+  its CHANGELOG for the details of each one; the "v2.3.12".."v2.3.17" in the comments of the sources are those of
+  lock_in+pid_harmonic). New FPGA image. Kept from v2.4.3: everything of the TWO lock-ins (gen_mod_h2, the four
+  demodulation_line, signal2_sw / signal2_i, gen_mod_phase_A / _B, X2 / Y2 with lpf_F1 and sg_amp1, the register
+  map of this App, the "(n/a)" options) and the streaming offsets generated from c/lock.txt
+- CHANGED the lock sequence runs entirely in the FPGA (lock_ctrl.v state machine OFF / ARMED / LOCKED): lock_control
+  (0x18) is command + configuration, never rewritten by the FPGA; 0x1C is now lock_status (read only, replaces
+  lock_feedback): [0] armed, [1] locked, [4:2] effective ramp / PID A / PID B enables, [15:8] lock counter. The C
+  controller writes lock_control only when the user changes it and reads the status on every request; the web UI
+  shows OFF / ARMED / LOCKED, Trigger Lock / Lock Now stay pressed while requested and a second click releases.
+  See lock_in+pid_harmonic2/doc/lock_control.md
+- CHANGED lock_ctrl.v registers its trigger inputs for timing (as lock_in+pid v2.2.6 / lock_in+pid_harmonic_hf
+  v2.3.11): ramp floor trigger (counter loaded with 1 one clock later: Time trigger in the same clock as before) and
+  the level / time comparisons (Level trigger 1 clock = 8 ns later). The lock-in core (demodulation, filters) is
+  not changed
+- CHANGED lock time trigger: 32 bits end to end (up to 2^32 - 1 ticks = 34.36 s)
+- ADDED Capture Lock (each lock request captures the closing of the loop in the scope, Ext Trig = "Lock control
+  trig", frozen until Auto / Single) and Fire on click. See lock_in+pid_harmonic2/doc/lock_capture.md
+- FIXED "Choose from graph" with any zoom / offset / time units; a click sets only the value of the trigger type;
+  the "Auto-zoom" option was removed
+- ADDED Time trigger / Level trigger fields with units (16.58 ms, 20 s, 0.1 V, 120 mV...); an emptied number field
+  is never sent as 0
+- FIXED Config -> load applies the scope window in the right units (seen by testAgent on v2.4.3, 1 of 2 loads with
+  the page in us) and does not send forcex_flag / time_units / time_range / gui_x* nor the read-only params; the full
+  config is sent in chunks with the window applied from the answer of the last one
+- FIXED every POST reset the scope (a Single waiting for its trigger was disarmed); AUTO after a lock capture; aborted
+  auto-set; zoom-out right after a change of time units
+- CHANGED PID integrator divider label "6 us" -> "65 us"; descriptions of X / Y (X, Y: cos_A / sin_A of signal_i;
+  X2, Y2: cos_B / sin_B of signal2_i); pidA_sw / pidB_sw 4 bits (0..15, the width of the selector)
+- ADDED HTTP remote control on Ecosystem 2.0: /osc writes TrgUnlock (0x94) and c/osc addresses registers by index;
+  register ranges in config_tool.py / c/lock.txt; resources/remote_control/http_version/control_finn.py of
+  lock_in+pid_harmonic v2.3.17 (scope_stop() / scope_auto(), minimal POST /data in one packet, WebScopeNotStopped,
+  host resolved once) adapted to the two lock-ins: reg_labels from the selectors of this App (cos_A..sin_B, X2o,
+  Y2o, signal2_i, signal2_sw), set_phase(val, line='A'|'B') (gen_mod_phase_A / _B), set_signal(sw, line),
+  set_gain(line, amp) (sg_amp0 / sg_amp1), set_lpf() / get_lpf() with lines 'A' (lpf_F0) and 'B' (lpf_F1),
+  get_XY(F=True) returns X, Y, X2, Y2; example_usage.py with both lock-ins and the ramp of
+  test_files/lock_in+pid_harmonic2__lock_mode.json
+- ADDED py/lock_from_registers.py (arm / lock now / release / status writing only FPGA registers); py/hugo.py
+  lock_status and osc.acq_done(); control_hugo.py launch_lock() / lock_now() / release_lock() / lock_status()
+- Tests (lock_in+pid_harmonic2/test/): xsim lock_ctrl_sim.sh and lock_bus_read_sim.sh; node lock_ctrl_ui_sim.js,
+  lock_capture_ui_sim.js, trig_input_units_sim.js, config_load_window_sim.js, trig_from_graph_sim.js;
+  auto_set_c_sim/run.sh (controller C on the PC)

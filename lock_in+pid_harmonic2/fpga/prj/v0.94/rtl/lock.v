@@ -87,7 +87,7 @@ module lock(
     reg         [32-1:0] lock_trig_time;
     reg  signed [14-1:0] lock_trig_val,rl_signal_threshold,sf_jumpA,sf_jumpB;
     wire        [ 5-1:0] rl_state;
-    wire        [11-1:0] lock_feedback;
+    wire        [16-1:0] lock_status;
     
     // mix --------------------------
     reg  signed [14-1:0] aux_A,aux_B;
@@ -100,16 +100,14 @@ module lock(
     
     // pidA --------------------------
     reg         [ 3-1:0] pidA_PSR,pidA_DSR,pidA_ctrl;
-    reg         [ 4-1:0] pidA_ISR;
-    reg         [ 5-1:0] pidA_sw;
+    reg         [ 4-1:0] pidA_sw,pidA_ISR;
     reg         [14-1:0] pidA_SAT;
     reg  signed [14-1:0] pidA_sp,pidA_kp,pidA_ki,pidA_kd;
     wire signed [14-1:0] pidA_in,pidA_out,ctrl_A;
     
     // pidB --------------------------
     reg         [ 3-1:0] pidB_PSR,pidB_DSR,pidB_ctrl;
-    reg         [ 4-1:0] pidB_ISR;
-    reg         [ 5-1:0] pidB_sw;
+    reg         [ 4-1:0] pidB_sw,pidB_ISR;
     reg         [14-1:0] pidB_SAT;
     reg  signed [14-1:0] pidB_sp,pidB_kp,pidB_ki,pidB_kd;
     wire signed [14-1:0] pidB_in,pidB_out,ctrl_B;
@@ -201,8 +199,6 @@ module lock(
     wire                 lock_trig_rise ;
     wire                 trig_val,trig_time,set_ramp_enable,set_pidA_enable,set_pidB_enable,ramp_enable_ctrl,pidA_enable_ctrl,pidB_enable_ctrl,launch_lock_trig,lock_now;
 
-    wire                 trigger_took_effect;
-
     // ERASE lolo // wire                 ramp_trig ;
 
 
@@ -230,7 +226,7 @@ module lock(
     reg  signed [14-1:0] pidA_in_rd,pidA_out_rd,pidB_in_rd,pidB_out_rd,ramp_A_rd,ramp_B_rd;
     reg  signed [14-1:0] cos_ref_rd,cos_A_rd,sin_A_rd,cos_B_rd,sin_B_rd;
     reg  signed [32-1:0] error_mean_rd,error_std_rd;
-    reg         [11-1:0] lock_feedback_rd;
+    reg         [16-1:0] lock_status_rd;
     wire        [50-1:0] cnt_next;
     wire                 freeze ;
 
@@ -694,20 +690,13 @@ module lock(
         .ramp_enable          ( ramp_enable_ctrl   ),
         .pidA_enable          ( pidA_enable_ctrl   ),
         .pidB_enable          ( pidB_enable_ctrl   ),
-        .lock_ctrl_trig       ( lock_ctrl_trig     )
+        .lock_ctrl_trig       ( lock_ctrl_trig     ),
+        .lock_status          ( lock_status        )   // read only status (0x1C), replaces lock_feedback
     );
 
+    // v2.3.13: lock_control is command + configuration and is never rewritten from the FPGA state;
+    // the lock state machine lives in lock_ctrl and is published in lock_status (doc/lock_control.md)
     assign lock_trig_rise      =  lock_control[10];
-    assign trigger_took_effect = &{ ~(ramp_enable_ctrl^lock_control[7]) , ~(pidA_enable_ctrl^lock_control[6]) , ~(pidB_enable_ctrl^lock_control[5]) } ;
-
-    wire  [2-1:0]  next_lock_cmd;
-    assign next_lock_cmd       = trigger_took_effect ? 2'b0 : lock_control[1:0] ;
-    assign lock_feedback =   { lock_control[10:5]  ,
-                               ramp_enable_ctrl ,
-                               pidA_enable_ctrl ,
-                               pidB_enable_ctrl ,
-                               next_lock_cmd
-                               };
 
     assign   trig_time        =   lock_control[8];
 
@@ -889,7 +878,7 @@ module lock(
     // every input of sys_rdata is stable for 2 clocks (multicycle constraint in
     // prj/v0.94/sdc/red_pitaya.xdc). The copies keep the value of the clock before the read.
     // This App: cos_ref, cos_A/sin_A, cos_B/sin_B of gen_mod_h2 (sin_ref and cos_1f..3f are 0 and
-    // are not registers of the bus) and lock_feedback.
+    // are not registers of the bus) and lock_status.
     always @(posedge clk) if (!sys_ren) begin
         in1_rd           <= in1           ;
         in2_rd           <= in2           ;
@@ -910,7 +899,7 @@ module lock(
         sin_B_rd         <= sin_B         ;
         error_mean_rd    <= error_mean    ;
         error_std_rd     <= error_std     ;
-        lock_feedback_rd <= lock_feedback ;
+        lock_status_rd   <= lock_status   ;
     end
     //read_ctrl
 
@@ -1077,8 +1066,8 @@ module lock(
         error_offset           <=  14'd0     ; // offset for the error signal
         mod_out1               <= -14'd1     ; // Modulation amplitud for out1
         mod_out2               <= -14'd1     ; // Modulation amplitud for out2
-        gen_mod_phase_A        <=  12'd0     ; // phase relation of cos_?f signals
-        gen_mod_phase_B        <=  12'd0     ; // phase relation of cos_?f signals
+        gen_mod_phase_A        <=  12'd0     ; // phase of the demodulation references (cos/sin) relative to cos_ref, 0..2519 = 0..360 deg
+        gen_mod_phase_B        <=  12'd0     ; // phase of the demodulation references (cos/sin) relative to cos_ref, 0..2519 = 0..360 deg
         gen_mod_hp             <=  14'd0     ; // harmonic period set
         ramp_step              <=  32'd0     ; // period of the triangular ramp signal
         ramp_low_lim           <= -14'd5000  ; // ramp low limit
@@ -1089,7 +1078,7 @@ module lock(
         ramp_sawtooth          <=   1'd0     ; // ramp Sawtooth wave form
         ramp_B_factor          <=  14'd4096  ; // proportional factor ramp_A/ramp_B. // ramp_B=ramp_A*ramp_B_factor/4096
         read_ctrl              <=   3'd0     ; // [unused,start_clk,Freeze]
-        pidA_sw                <=   5'd0     ; // switch selector for pidA input
+        pidA_sw                <=   4'd0     ; // switch selector for pidA input
         pidA_PSR               <=   3'd3     ; // pidA PSR
         pidA_ISR               <=   4'd8     ; // pidA ISR
         pidA_DSR               <=   3'd0     ; // pidA DSR
@@ -1099,7 +1088,7 @@ module lock(
         pidA_ki                <=  14'd0     ; // pidA integral constant
         pidA_kd                <=  14'd0     ; // pidA derivative constant
         pidA_ctrl              <=   3'd0     ; // pidA control: [ pidA_ifreeze: integrator freeze , pidA_freeze: output freeze , pidA_irst:integrator reset]
-        pidB_sw                <=   5'd0     ; // switch selector for pidB input
+        pidB_sw                <=   4'd0     ; // switch selector for pidB input
         pidB_PSR               <=   3'd3     ; // pidB PSR
         pidB_ISR               <=   4'd8     ; // pidB ISR
         pidB_DSR               <=   3'd0     ; // pidB DSR
@@ -1124,7 +1113,7 @@ module lock(
             if (sys_addr[19:0]==20'h00010)  out1_sw               <=  sys_wdata[ 4-1: 0] ; // switch for muxer out1
             if (sys_addr[19:0]==20'h00014)  out2_sw               <=  sys_wdata[ 4-1: 0] ; // switch for muxer out2
             if (sys_addr[19:0]==20'h00018)  lock_control          <=  sys_wdata[11-1: 0] ; // lock_control help
-          //if (sys_addr[19:0]==20'h0001C)  lock_feedback         <=  sys_wdata[11-1: 0] ; // lock_control feedback
+          //if (sys_addr[19:0]==20'h0001C)  lock_status           <=  sys_wdata[16-1: 0] ; // lock control status (read only): [lock_count(8),0,0,0,ramp_enable,pidA_enable,pidB_enable,locked,armed]
             if (sys_addr[19:0]==20'h00020)  lock_trig_val         <=  sys_wdata[14-1: 0] ; // if lock_control ?? , this vals sets the voltage threshold that turns on the lock
             if (sys_addr[19:0]==20'h00024)  lock_trig_time        <=  sys_wdata[32-1: 0] ; // if lock_control ?? , this vals sets the time threshold that turns on the lock
             if (sys_addr[19:0]==20'h00028)  lock_trig_sw          <=  sys_wdata[ 4-1: 0] ; // selects signal for trigger
@@ -1155,8 +1144,8 @@ module lock(
           //if (sys_addr[19:0]==20'h0008C)  error_std             <=  sys_wdata[32-1: 0] ; // 1 sec error square sum val
             if (sys_addr[19:0]==20'h00090)  mod_out1              <=  sys_wdata[14-1: 0] ; // Modulation amplitud for out1
             if (sys_addr[19:0]==20'h00094)  mod_out2              <=  sys_wdata[14-1: 0] ; // Modulation amplitud for out2
-            if (sys_addr[19:0]==20'h00098)  gen_mod_phase_A       <=  sys_wdata[12-1: 0] ; // phase relation of cos_?f signals
-            if (sys_addr[19:0]==20'h0009C)  gen_mod_phase_B       <=  sys_wdata[12-1: 0] ; // phase relation of cos_?f signals
+            if (sys_addr[19:0]==20'h00098)  gen_mod_phase_A       <=  sys_wdata[12-1: 0] ; // phase of the demodulation references (cos/sin) relative to cos_ref, 0..2519 = 0..360 deg
+            if (sys_addr[19:0]==20'h0009C)  gen_mod_phase_B       <=  sys_wdata[12-1: 0] ; // phase of the demodulation references (cos/sin) relative to cos_ref, 0..2519 = 0..360 deg
             if (sys_addr[19:0]==20'h000A0)  gen_mod_hp            <=  sys_wdata[14-1: 0] ; // harmonic period set
           //if (sys_addr[19:0]==20'h000A4)  ramp_A                <=  sys_wdata[14-1: 0] ; // ramp signal A
           //if (sys_addr[19:0]==20'h000A8)  ramp_B                <=  sys_wdata[14-1: 0] ; // ramp signal B
@@ -1179,15 +1168,15 @@ module lock(
           //if (sys_addr[19:0]==20'h000EC)  out2                  <=  sys_wdata[14-1: 0] ; // signal for RP RF DAC Out2
           //if (sys_addr[19:0]==20'h000F0)  oscA                  <=  sys_wdata[14-1: 0] ; // signal for Oscilloscope Channel A
           //if (sys_addr[19:0]==20'h000F4)  oscB                  <=  sys_wdata[14-1: 0] ; // signal for Oscilloscope Channel B
-          //if (sys_addr[19:0]==20'h000F8)  X_28                  <=  sys_wdata[28-1: 0] ; // Demodulated signal from sin_ref
-          //if (sys_addr[19:0]==20'h000FC)  Y_28                  <=  sys_wdata[28-1: 0] ; // Demodulated signal from cos_ref
-          //if (sys_addr[19:0]==20'h00100)  X2_28                 <=  sys_wdata[28-1: 0] ; // Demodulated signal from cos_1f
-          //if (sys_addr[19:0]==20'h00104)  Y2_28                 <=  sys_wdata[28-1: 0] ; // Demodulated signal from cos_2f
+          //if (sys_addr[19:0]==20'h000F8)  X_28                  <=  sys_wdata[28-1: 0] ; // Demodulated signal from cos_A (in phase, signal_i)
+          //if (sys_addr[19:0]==20'h000FC)  Y_28                  <=  sys_wdata[28-1: 0] ; // Demodulated signal from sin_A (quadrature, signal_i)
+          //if (sys_addr[19:0]==20'h00100)  X2_28                 <=  sys_wdata[28-1: 0] ; // Demodulated signal from cos_B (in phase, signal2_i)
+          //if (sys_addr[19:0]==20'h00104)  Y2_28                 <=  sys_wdata[28-1: 0] ; // Demodulated signal from sin_B (quadrature, signal2_i)
           //if (sys_addr[19:0]==20'h00108)  F3_28                 <=  sys_wdata[28-1: 0] ; // Demodulated signal from cos_3f
           //if (sys_addr[19:0]==20'h0010C)  cnt_clk               <=  sys_wdata[32-1: 0] ; // Clock count
           //if (sys_addr[19:0]==20'h00110)  cnt_clk2              <=  sys_wdata[32-1: 0] ; // Clock count
             if (sys_addr[19:0]==20'h00114)  read_ctrl             <=  sys_wdata[ 3-1: 0] ; // [unused,start_clk,Freeze]
-            if (sys_addr[19:0]==20'h00118)  pidA_sw               <=  sys_wdata[ 5-1: 0] ; // switch selector for pidA input
+            if (sys_addr[19:0]==20'h00118)  pidA_sw               <=  sys_wdata[ 4-1: 0] ; // switch selector for pidA input
             if (sys_addr[19:0]==20'h0011C)  pidA_PSR              <=  sys_wdata[ 3-1: 0] ; // pidA PSR
             if (sys_addr[19:0]==20'h00120)  pidA_ISR              <=  sys_wdata[ 4-1: 0] ; // pidA ISR
             if (sys_addr[19:0]==20'h00124)  pidA_DSR              <=  sys_wdata[ 3-1: 0] ; // pidA DSR
@@ -1200,7 +1189,7 @@ module lock(
           //if (sys_addr[19:0]==20'h00140)  pidA_out              <=  sys_wdata[14-1: 0] ; // pidA output
             if (sys_addr[19:0]==20'h00144)  pidA_ctrl             <=  sys_wdata[ 3-1: 0] ; // pidA control: [ pidA_ifreeze: integrator freeze , pidA_freeze: output freeze , pidA_irst:integrator reset]
           //if (sys_addr[19:0]==20'h00148)  ctrl_A                <=  sys_wdata[14-1: 0] ; // control_A: pidA_out + ramp_A
-            if (sys_addr[19:0]==20'h0014C)  pidB_sw               <=  sys_wdata[ 5-1: 0] ; // switch selector for pidB input
+            if (sys_addr[19:0]==20'h0014C)  pidB_sw               <=  sys_wdata[ 4-1: 0] ; // switch selector for pidB input
             if (sys_addr[19:0]==20'h00150)  pidB_PSR              <=  sys_wdata[ 3-1: 0] ; // pidB PSR
             if (sys_addr[19:0]==20'h00154)  pidB_ISR              <=  sys_wdata[ 4-1: 0] ; // pidB ISR
             if (sys_addr[19:0]==20'h00158)  pidB_DSR              <=  sys_wdata[ 3-1: 0] ; // pidB DSR
@@ -1247,7 +1236,7 @@ module lock(
                 20'h00010 : sys_rdata <= {  28'b0                   ,          out1_sw  }; // switch for muxer out1
                 20'h00014 : sys_rdata <= {  28'b0                   ,          out2_sw  }; // switch for muxer out2
                 20'h00018 : sys_rdata <= {  21'b0                   ,     lock_control  }; // lock_control help
-                20'h0001C : sys_rdata <= {  21'b0                   ,  lock_feedback_rd  }; // lock_control feedback
+                20'h0001C : sys_rdata <= {  16'b0                   ,   lock_status_rd  }; // lock control status (read only): [lock_count(8),0,0,0,ramp_enable,pidA_enable,pidB_enable,locked,armed]
                 20'h00020 : sys_rdata <= {  {18{lock_trig_val[13]}} ,    lock_trig_val  }; // if lock_control ?? , this vals sets the voltage threshold that turns on the lock
                 20'h00024 : sys_rdata <=                                lock_trig_time   ; // if lock_control ?? , this vals sets the time threshold that turns on the lock
                 20'h00028 : sys_rdata <= {  28'b0                   ,     lock_trig_sw  }; // selects signal for trigger
@@ -1278,8 +1267,8 @@ module lock(
                 20'h0008C : sys_rdata <=                                  error_std_rd   ; // 1 sec error square sum val
                 20'h00090 : sys_rdata <= {  {18{mod_out1[13]}}      ,         mod_out1  }; // Modulation amplitud for out1
                 20'h00094 : sys_rdata <= {  {18{mod_out2[13]}}      ,         mod_out2  }; // Modulation amplitud for out2
-                20'h00098 : sys_rdata <= {  20'b0                   ,  gen_mod_phase_A  }; // phase relation of cos_?f signals
-                20'h0009C : sys_rdata <= {  20'b0                   ,  gen_mod_phase_B  }; // phase relation of cos_?f signals
+                20'h00098 : sys_rdata <= {  20'b0                   ,  gen_mod_phase_A  }; // phase of the demodulation references (cos/sin) relative to cos_ref, 0..2519 = 0..360 deg
+                20'h0009C : sys_rdata <= {  20'b0                   ,  gen_mod_phase_B  }; // phase of the demodulation references (cos/sin) relative to cos_ref, 0..2519 = 0..360 deg
                 20'h000A0 : sys_rdata <= {  18'b0                   ,       gen_mod_hp  }; // harmonic period set
                 20'h000A4 : sys_rdata <= {  {18{ramp_A_rd[13]}}     ,        ramp_A_rd  }; // ramp signal A
                 20'h000A8 : sys_rdata <= {  {18{ramp_B_rd[13]}}     ,        ramp_B_rd  }; // ramp signal B
@@ -1302,15 +1291,15 @@ module lock(
                 20'h000EC : sys_rdata <= {  {18{out2_rd[13]}}       ,          out2_rd  }; // signal for RP RF DAC Out2
                 20'h000F0 : sys_rdata <= {  {18{oscA_rd[13]}}       ,          oscA_rd  }; // signal for Oscilloscope Channel A
                 20'h000F4 : sys_rdata <= {  {18{oscB_rd[13]}}       ,          oscB_rd  }; // signal for Oscilloscope Channel B
-                20'h000F8 : sys_rdata <= {  { 4{X_28_reg[27]}}      ,         X_28_reg  }; // Demodulated signal from sin_ref
-                20'h000FC : sys_rdata <= {  { 4{Y_28_reg[27]}}      ,         Y_28_reg  }; // Demodulated signal from cos_ref
-                20'h00100 : sys_rdata <= {  { 4{X2_28_reg[27]}}     ,        X2_28_reg  }; // Demodulated signal from cos_1f
-                20'h00104 : sys_rdata <= {  { 4{Y2_28_reg[27]}}     ,        Y2_28_reg  }; // Demodulated signal from cos_2f
+                20'h000F8 : sys_rdata <= {  { 4{X_28_reg[27]}}      ,         X_28_reg  }; // Demodulated signal from cos_A (in phase, signal_i)
+                20'h000FC : sys_rdata <= {  { 4{Y_28_reg[27]}}      ,         Y_28_reg  }; // Demodulated signal from sin_A (quadrature, signal_i)
+                20'h00100 : sys_rdata <= {  { 4{X2_28_reg[27]}}     ,        X2_28_reg  }; // Demodulated signal from cos_B (in phase, signal2_i)
+                20'h00104 : sys_rdata <= {  { 4{Y2_28_reg[27]}}     ,        Y2_28_reg  }; // Demodulated signal from sin_B (quadrature, signal2_i)
                 20'h00108 : sys_rdata <= {  { 4{F3_28_reg[27]}}     ,        F3_28_reg  }; // Demodulated signal from cos_3f
                 20'h0010C : sys_rdata <=                                       cnt_clk   ; // Clock count
                 20'h00110 : sys_rdata <=                                      cnt_clk2   ; // Clock count
                 20'h00114 : sys_rdata <= {  29'b0                   ,        read_ctrl  }; // [unused,start_clk,Freeze]
-                20'h00118 : sys_rdata <= {  27'b0                   ,          pidA_sw  }; // switch selector for pidA input
+                20'h00118 : sys_rdata <= {  28'b0                   ,          pidA_sw  }; // switch selector for pidA input
                 20'h0011C : sys_rdata <= {  29'b0                   ,         pidA_PSR  }; // pidA PSR
                 20'h00120 : sys_rdata <= {  28'b0                   ,         pidA_ISR  }; // pidA ISR
                 20'h00124 : sys_rdata <= {  29'b0                   ,         pidA_DSR  }; // pidA DSR
@@ -1323,7 +1312,7 @@ module lock(
                 20'h00140 : sys_rdata <= {  {18{pidA_out_rd[13]}}   ,      pidA_out_rd  }; // pidA output
                 20'h00144 : sys_rdata <= {  29'b0                   ,        pidA_ctrl  }; // pidA control: [ pidA_ifreeze: integrator freeze , pidA_freeze: output freeze , pidA_irst:integrator reset]
                 20'h00148 : sys_rdata <= {  {18{ctrl_A_reg[13]}}    ,       ctrl_A_reg  }; // control_A: pidA_out + ramp_A
-                20'h0014C : sys_rdata <= {  27'b0                   ,          pidB_sw  }; // switch selector for pidB input
+                20'h0014C : sys_rdata <= {  28'b0                   ,          pidB_sw  }; // switch selector for pidB input
                 20'h00150 : sys_rdata <= {  29'b0                   ,         pidB_PSR  }; // pidB PSR
                 20'h00154 : sys_rdata <= {  28'b0                   ,         pidB_ISR  }; // pidB ISR
                 20'h00158 : sys_rdata <= {  29'b0                   ,         pidB_DSR  }; // pidB DSR
