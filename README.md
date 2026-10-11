@@ -9,6 +9,28 @@ Video from lock-in+PID Harmonic version:
 [![Example of usage](http://img.youtube.com/vi/330eYE75MYQ/0.jpg)](http://www.youtube.com/watch?v=330eYE75MYQ "Fast demosatration of usage")
 
 
+## Version 2.4.x (Ecosystem 2.0)
+
+Current version: **2.4.3** (branch `devel2.0`).
+
+This version is **based on the 0.4.x series (v0.4.2), with the FPGA design built in Vivado 2020.1**,
+using the project structure of [RedPitaya-FPGA](https://github.com/RedPitaya/RedPitaya-FPGA)
+(project `v0.94`, model `Z10`), the same port done in
+[rp_lock-in_pid_h](https://github.com/marceluda/rp_lock-in_pid_h) v2.3.x (its v2.3.10 and v2.3.11, plus
+the bus read fix of its v2.3.17). It is intended for the Red Pitaya **Ecosystem 2.0** (e.g. `RedPitaya_OS_2.04`).
+The 0.4.x series (branch `master`, FPGA with Vivado 2015.2) is the version for the 0.9x / 1.0 ecosystems.
+
+- TWO lock-ins: the modulation generator `gen_mod_h2` gives `cos_ref` and two pairs of references,
+  `cos_A`/`sin_A` (phase `gen_mod_phase_A`) and `cos_B`/`sin_B` (phase `gen_mod_phase_B`), that demodulate
+  `signal_i` (X, Y) and `signal2_i` (X2, Y2). Registers of the lock module unchanged from v0.4.2.
+- FPGA: `lock_in+pid_harmonic2/fpga/` (Vivado 2020.1, see
+  [lock_in+pid_harmonic2/fpga/README.md](lock_in+pid_harmonic2/fpga/README.md)). Oscilloscope of the
+  Ecosystem 2.0 (trigger lock, decimation widened to 20 bits), bus reads of the lock module held during the
+  read.
+- Only the App itself is packaged (the `_DEBUG` and `_RELOAD` flavours were removed).
+- See the [CHANGELOG](CHANGELOG.md).
+
+
 ## Features
 
 - **TWO** Lock-in amplifier
@@ -53,9 +75,11 @@ https://marceluda.github.io/rp_lock-in_pid/TheApp/install/
 
 # Development
 
-To build or modify the App you need a linux development environment with:
-  - Vivado 2015.2
+To build of modify the App you need a linux development environment with:
+  - Vivado 2020.1 (FPGA and `bootgen`; `lock_in+pid_harmonic2/fpga/Makefile` loads
+    `/tools/Xilinx/Vivado/2020.1/settings64.sh` by itself, override with `VIVADO_SETTINGS=...`)
   - gcc-linaro-4.9-2015.02-3-x86_64_arm-linux-gnueabihf (installed on `/opt/linaro/gcc-linaro-4.9-2015.02-3-x86_64_arm-linux-gnueabihf/`)
+  - (the 0.4.x series, branch `master`, used Vivado 2015.2)
 
 
 The App was based on code from project:
@@ -134,7 +158,7 @@ For web controller building:
 make app
 ```
 
-For FPGA implementation:
+For FPGA implementation (Vivado 2020.1, RedPitaya-FPGA structure; also from `lock_in+pid_harmonic2/fpga` with `make`):
 
 ```bash
 make fpga
@@ -165,6 +189,15 @@ UnZip / UnTar the App folder. Execute from terminal:
 ```
 
 Replace `rp-XXXXXX.local` by your RP localname or IP address
+
+Or, from the App folder of the sources (builds `target/` first):
+
+```bash
+make upload RPIP=rp-XXXXXX.local        # whole App
+make upload_html RPIP=rp-XXXXXX.local   # only index.html, js, css
+```
+
+Then stop and start the App (or open it from the menu) so that the new controller and FPGA are loaded.
 
 Also, you can use your own SSH client and upload the `lock_in+pid_harmonic2` folder the the
 RedPiaya folder: `/opt/redpitaya/www/apps`
