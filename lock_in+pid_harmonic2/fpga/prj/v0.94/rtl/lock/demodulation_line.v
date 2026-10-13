@@ -50,14 +50,18 @@ module demodulation_line #(parameter R=14, RT=5, BIT_ENHANCE=10)
 
    assign mult_tmp_E = mult_tmp_double <<< BIT_ENHANCE ; // this is for amplitud enhancement
 
-   LP_filter3 #(.R(R*2+BIT_ENHANCE)) i_LP_filter_1 (
+   // v2.4.6 (timing, from lock_in+pid_harmonic v2.3.19): output of the first LPF stage registered (+1 clock),
+   // sum_div of the second stage in a register (no latency), gain + saturations in one step (shift_sat14,
+   // same values) and the output registered (+1 clock): out comes 2 clocks (16 ns) later, out_hr 1 clock.
+   // See doc/lock_latency.md.
+   LP_filter3 #(.R(R*2+BIT_ENHANCE),.OREG(1)) i_LP_filter_1 (
       .clk(clk), .rst(rst), 
       .tau(  tau1   ), 
       .in( mult_tmp_E ), 
       .out( lpf1_out ) 
    );
 
-   LP_filter3 #(.R(R*2+BIT_ENHANCE)) i_LP_filter_2 (
+   LP_filter3 #(.R(R*2+BIT_ENHANCE),.DREG(1)) i_LP_filter_2 (
       .clk(clk), .rst(rst), 
       .tau(  tau2   ), 
       .in( lpf1_out ), 
@@ -65,17 +69,21 @@ module demodulation_line #(parameter R=14, RT=5, BIT_ENHANCE=10)
    );
 
    assign out_double   = lpf2_out >>> BIT_ENHANCE ; // this is for amplitud enhancement compensation
-   assign out_amp      = ( lpf2_out   <<< amp  );
+   // up to v2.4.5: out_amp = lpf2_out <<< amp (R*2+BIT_ENHANCE+RT bits) -> satprotect2 (-> R*2+BIT_ENHANCE bits)
+   // -> top 17 bits -> satprotect2 (17 -> 14). shift_sat14 gives the same value (R = 14).
+   wire signed [R-1:0] out_w;
+   reg  signed [R-1:0] out_r = {R{1'b0}};
 
-   satprotect2 #(.Ri(R*2+BIT_ENHANCE+RT),.Ro(R*2+BIT_ENHANCE)) i_satprotect_53   ( 
-      .in( out_amp  ), 
-      .out( out_E  ) 
+   shift_sat14 #(.RI(R*2+BIT_ENHANCE),.W(R*2+BIT_ENHANCE+RT),.RO(R*2+BIT_ENHANCE),.SB(RT)) i_shift_sat14 (
+      .in( lpf2_out ),
+      .sh( amp      ),
+      .out( out_w   )
    );
 
-   satprotect2 #(.Ri(17),.Ro(R)) i_satprotect_38 ( 
-      .in(  out_E[  R*2+BIT_ENHANCE-1:R*2+BIT_ENHANCE-17] ),    
-      .out( out    ) 
-   );
+   always @(posedge clk)   // no reset (data path)
+      out_r <= out_w ;
+
+   assign out = out_r ;
 
    assign out_hr = out_double;
    

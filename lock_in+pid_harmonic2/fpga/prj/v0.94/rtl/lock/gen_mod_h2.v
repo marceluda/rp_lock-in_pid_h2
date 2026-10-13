@@ -9,7 +9,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 //(* keep_hierarchy = "yes" *)
-module gen_mod_h2
+module gen_mod_h2_comb
 (
     input clk,rst,
     input           [12-1:0] phase_A,    // Phase control
@@ -364,3 +364,63 @@ endmodule
 
 
 */
+
+
+// v2.3.19 (timing, port of lock_in+pid_harmonic): wrapper with the outputs registered. The generator
+// (gen_mod_h2_comb, unchanged) comes 1 clock (8 ns) later, all its outputs by the same clock (same waveforms
+// and phases between them); the reads of the ROM tables plus the sign change did not leave time for the
+// paths that start here. See doc/lock_latency.md.
+module gen_mod_h2 (
+    input  clk,
+    input  rst,
+    input [12-1:0] phase_A,
+    input [12-1:0] phase_B,
+    input [14-1:0] hp,
+    output reg signed   [14-1:0] cos_ref,
+    output reg signed   [14-1:0] cos_A,
+    output reg signed   [14-1:0] sin_A,
+    output reg signed   [14-1:0] cos_B,
+    output reg signed   [14-1:0] sin_B,
+    output reg [12-1:0] cntu_w,
+    output reg  harmonic_trig
+);
+    wire signed   [14-1:0] cos_ref_w;
+    wire signed   [14-1:0] cos_A_w;
+    wire signed   [14-1:0] sin_A_w;
+    wire signed   [14-1:0] cos_B_w;
+    wire signed   [14-1:0] sin_B_w;
+    wire [12-1:0] cntu_w_w;
+    wire  harmonic_trig_w;
+    gen_mod_h2_comb i_comb (
+        .clk(clk),
+        .rst(rst),
+        .phase_A(phase_A),
+        .phase_B(phase_B),
+        .hp(hp),
+        .cos_ref(cos_ref_w),
+        .cos_A(cos_A_w),
+        .sin_A(sin_A_w),
+        .cos_B(cos_B_w),
+        .sin_B(sin_B_w),
+        .cntu_w(cntu_w_w),
+        .harmonic_trig(harmonic_trig_w)
+    );
+    initial begin
+        cos_ref = 0;
+        cos_A = 0;
+        sin_A = 0;
+        cos_B = 0;
+        sin_B = 0;
+        cntu_w = 0;
+        harmonic_trig = 0;
+    end
+    always @(posedge clk) begin   // no reset (data path)
+        cos_ref <= cos_ref_w;
+        cos_A <= cos_A_w;
+        sin_A <= sin_A_w;
+        cos_B <= cos_B_w;
+        sin_B <= sin_B_w;
+        cntu_w <= cntu_w_w;
+        harmonic_trig <= harmonic_trig_w;
+    end
+endmodule

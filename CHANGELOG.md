@@ -155,3 +155,18 @@ v2.4.5
   doc/lock_control.md and doc/Remote.md (trigger registers written from outside)
 - Tests: test/minor_ui_sim.js (new), lock_capture_ui_sim.js part 7 (Single polling), config_load_window_sim.js
   (no read-only key sent), auto_set_c_sim parts 4 and 5
+
+v2.4.6
+- FPGA timing (port of lock_in+pid_harmonic v2.3.19, the user allowed adding latency): WNS -9.618 -> -1.281 ns,
+  TNS -9950 -> -510 ns, 4927 -> 996 failing endpoints (reset recovery -1.608 -> +0.414 ns). Pipeline registers in the
+  long combinational chains of the loop; same behaviour except for the latencies (bit by bit in simulation against
+  v2.4.5). Details and latency of each signal: lock_in+pid_harmonic2/doc/lock_latency.md
+- CHANGED (FPGA, added latency, 8 ns per clock): generator outputs +1 (gen_mod_h2 wrapper with registered outputs);
+  Xo, Yo, X2o, Y2o +2 (demodulation_line: register after the first LPF stage and output register); bus X_28..Y2_28
+  +1; PID outputs +1; out1/out2 +1. LOCK MODE loop +32 ns
+- CHANGED (FPGA): the references reach the two lock-ins 1 clock later than the outputs, so the phase measured
+  through DAC -> system -> ADC does not change (lock_in+pid_harmonic 2.3.19 does not have this compensation)
+- CHANGED (FPGA, same values): shift_sat14 in demodulation_line, sat14 without barrel shifter, PID integrator with
+  the ISR shift in parallel, sum_div of the second LPF stage in a register; sg_amp1 connected as {1'b0, sg_amp1}
+- CHANGED page title (h2.page-title) and <title> get the version of info/info.json at build time (Makefile)
+- ADDED test/lock_latency_sim.sh + test/lock_latency_tb.sv (xsim, 406 checks against v2.4.5)
