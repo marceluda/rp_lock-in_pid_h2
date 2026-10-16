@@ -18,7 +18,7 @@ Video from lock-in+PID Harmonic version:
 
 ## Version 2.4.x (Ecosystem 2.0)
 
-Current version: **2.4.7** (branch `master`).
+Current version: **2.4.8** (branch `master`).
 
 This version is **based on the 0.4.x series (v0.4.2), with the FPGA design built in Vivado 2020.1**,
 using the project structure of [RedPitaya-FPGA](https://github.com/RedPitaya/RedPitaya-FPGA)
@@ -50,6 +50,10 @@ version for the 0.9x / 1.0 ecosystems.
   scans** (windows ≥ 1.5 s, e.g. a 30 s ramp): no samples of an older lap of the scope memory, Capture Lock with
   long histories, Reset zoom at 0.98 × the period; (FPGA) a time trigger armed after the ramp was stopped waits for
   the next scan floor.
+- v2.4.8 (from lock_in+pid_harmonic 2.3.24): **scope presets** below Ext Trig: `in1|in2`, `in1|ctrl`,
+  `X|Y` (Xo, Yo of lock-in A), `in1|err`, `ctrl|err` and `usr` (a pair of the user: double click to choose it; saved in the browser
+  and in the configs). They change only OscA/OscB (not the zoom nor the trigger). Picking an **Ext Trig** other than
+  None sets the Trigger panel to External + Normal.
 - See the [CHANGELOG](CHANGELOG.md).
 
 **Register map.** The lock module has 102 registers; from `0x054` on the addresses are shifted with respect to

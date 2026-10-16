@@ -202,3 +202,19 @@ v2.4.7
 - Tests: new test/reset_zoom_sim.js (29), test/plot_wheel_sim.js (59), test/ramp_mod_period_sim.sh (ramps and
   gen_mod_h2 2520*(hp+1), 10); lock_capture_ui_sim.js section 8 (79), auto_set_c_sim sections 6-9 (44),
   lock_ctrl_tb.v cases 16-19 and the time_eq monitor (46)
+
+v2.4.8
+- Port of lock_in+pid_harmonic v2.3.24 (web page only: no FPGA, no controller change). X|Y is lock-in A (Xo, Yo); X2o/Y2o of lock-in B are not in the fixed presets (the `usr` dialog offers every signal of the selects, X2o/Y2o included).
+- ADDED presets of the scope signals: six small buttons below Ext Trig (two rows of three, 42x20 px, 10 px bold):
+  blue in1|in2, in1|ctrl (ctrl_A), X|Y (Xo, Yo of lock-in A); green in1|err (error), ctrl|err (ctrl_A, error) and usr.
+  A click sets OscA/OscB (mux 1, 2, 3, 4, 17, 18) as the two selects do: one POST with only lock_oscA_sw / lock_oscB_sw
+  (plus single_btn/xmin/xmax unchanged); zoom, trigger and Capture Lock untouched; tooltips name the two signals
+- ADDED usr preset: double click (or a click while not configured, dashed border) opens a dialog with all the
+  signals of the selects (default the first time: PID A out | error); Accept saves it in localStorage
+  (oscUsrPreset_lock_in+pid_harmonic2) and in the configs (Config save / download json, ui.ui_osc_usr_a/b, never sent to the
+  server); Config load of a config with it takes it, older configs keep the current pair
+- CHANGED picking an Ext Trig other than the current one and not None sets the Trigger panel to Source = External,
+  Mode = Normal in the same POST (from Single the page polls again); None changes nothing else; Config load, the end
+  of a Capture Lock, Reset zoom and AUTO do not apply it; during a Capture Lock it ends it, then one POST
+- Tests: new test/osc_presets_sim.js (37; the page of 2.4.7 fails 32); config_load_window_sim.js: stub of
+  oscUsrConfigLoad()
