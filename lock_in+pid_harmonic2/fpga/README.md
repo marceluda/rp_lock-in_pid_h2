@@ -5,7 +5,7 @@ FPGA design of the App since v2.4.3, for the Red Pitaya **Ecosystem 2.0**
 [RedPitaya-FPGA](https://github.com/RedPitaya/RedPitaya-FPGA) (project `v0.94`,
 model `Z10`) with the `lock` module of this App (two lock-ins: `lock/gen_mod_h2.v`
 gives cos_ref, cos_A/sin_A and cos_B/sin_B, demodulated by four `lock/demodulation_line.v`).
-The previous design (Vivado 2015.2) is in `../fpga_old_2015.2/`.
+The previous design (Vivado 2015.2) is in tag `v0.4.2` (folder `lock_in+pid_harmonic2/fpga/`).
 
 ## Build
 
