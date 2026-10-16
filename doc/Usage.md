@@ -60,7 +60,8 @@ back.
 | Button | Action |
 |---|---|
 | Autoscale | Rescales the **Y axis** to the data on screen, only in the page. Does not end a lock capture. |
-| Reset zoom, zoom in/out, pan | Plot navigation. A zoom selects the time window of the acquisition (the decimation is chosen from it). Careful with the mouse wheel over the plot: it zooms (and sends the new window). |
+| Reset zoom, zoom in/out, pan | Plot navigation. A zoom selects the time window of the acquisition (the decimation is chosen from it). Reset zoom (v2.4.7) sets the window from t = 0 to one period of the ramp (Ext Trig = Scan floor / Scan ceil), one period of the modulation (Ext Trig = harmonic mod., 2520·(hp+1) ticks, the same for both lock-ins) or one whole memory at the current decimation (otherwise), and Y to −1 … 1 V (raw mode −8192 … 8192). Periods of 1.5 s or more: 0.98 × the period, so that every scan is acquired. During a lock capture it first ends it, as AUTO, and uses the restored Ext Trig. The Raw Mode button rescales Y the same way. |
+| Mouse wheel on the plot (v2.4.7) | Zoom centred on the mouse, 1.5× per step. **No key:** both axes (time and the two Y axes). **SHIFT** held: time axis only (the cursor becomes a horizontal double arrow ↔). **ALT** held: Y axes only (vertical double arrow ↕; in raw mode the Y range is in counts). The time window is sent to the controller once the wheel stops (250 ms), which chooses the decimation as for any zoom; it stays between 20 ns and 68.7 s. The Y zoom is only in the page (1/2048 … 1000 × full scale). During a lock capture the wheel zoom is only in the page; ending the capture restores the window saved before it. The wheel on the number fields is not affected (SHIFT ×10, CTRL ×100). |
 | Channel 1 / Channel 2 | Show or hide each channel. |
 | Stop | Stops the acquisition. |
 | Save Data | Plot data as Python/Numpy, Matlab/Octave or CSV ([Saving data](#saving-data)). |
@@ -78,7 +79,8 @@ back.
   **X2o, Y2o**, signal_i, **signal2_i**, out1, out2. `sin_ref` is not in this list: use `sin_A` with Phase A = 0.
 - **Ext Trig**: event used when the scope trigger *Source* is *External*: None, Pin (DIO0_P), Scan floor,
   Scan ceil, harmonic mod. (start of each period of `cos_ref`), Out of lock, Jump trigger, Lock control trig
-  (the lock event; used by Capture Lock). *Square mod.* is not implemented.
+  (the lock event; used by Capture Lock). *Square mod.* is not implemented (always 0 in the FPGA) and is not in the
+  menu since v2.4.7.
 - **More options**: *R|Phase Mode* (disabled) and *Disable anti-aliasing filter* for each channel.
 
 ![More options (screenshot of _h)](.Usage/h_panel_oscilloscope_more_options.jpg)

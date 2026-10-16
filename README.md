@@ -18,7 +18,7 @@ Video from lock-in+PID Harmonic version:
 
 ## Version 2.4.x (Ecosystem 2.0)
 
-Current version: **2.4.6** (branch `devel2.0`).
+Current version: **2.4.7** (branch `master`).
 
 This version is **based on the 0.4.x series (v0.4.2), with the FPGA design built in Vivado 2020.1**,
 using the project structure of [RedPitaya-FPGA](https://github.com/RedPitaya/RedPitaya-FPGA)
@@ -40,6 +40,16 @@ version for the 0.9x / 1.0 ecosystems.
   higher priority of the streaming reader, `lock_from_registers.py --time` clamped, `example_usage.py` Lock cell.
 - Tested on the board against a simulated peak: locks with time, level and immediate trigger, both lock-ins,
   scope, bus reads, remote control and streaming ([doc/App.md](doc/App.md#lock-control-auto-lock)).
+- v2.4.6: pipeline registers in the FPGA to close timing (WNS −9.6 → −1.3 ns), references of both lock-ins delayed
+  1 clock to keep the measured phase.
+- v2.4.7 (from `rp_lock-in_pid_h` 2.3.21–2.3.23): **Reset zoom** sets the scope to one period of the ramp (Ext Trig =
+  Scan floor / Scan ceil), one period of the modulation shared by both lock-ins (harmonic mod., 2520·(hp+1) ticks)
+  or one whole memory at the current Dec, and Y to −1 … 1 V (raw mode −8192 … 8192); it ends a lock capture first,
+  and Raw Mode rescales Y. "Square mod." (not implemented) is no longer in the trigger menu. **Mouse wheel on the
+  scope**: no key zooms both axes, **SHIFT** only time (cursor ↔), **ALT** only the Y axes (cursor ↕). **Slow
+  scans** (windows ≥ 1.5 s, e.g. a 30 s ramp): no samples of an older lap of the scope memory, Capture Lock with
+  long histories, Reset zoom at 0.98 × the period; (FPGA) a time trigger armed after the ramp was stopped waits for
+  the next scan floor.
 - See the [CHANGELOG](CHANGELOG.md).
 
 **Register map.** The lock module has 102 registers; from `0x054` on the addresses are shifted with respect to
