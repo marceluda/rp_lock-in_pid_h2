@@ -1,7 +1,7 @@
 # RP TWO Lock-in+PID Harmonic — documentation
 
-Documentation of `lock_in+pid_harmonic2` **v2.4.4** (branch `devel2.0`, Ecosystem 2.0, FPGA built with
-Vivado 2020.1): the App `lock_in+pid_harmonic` 2.3.17 with **two lock-in amplifiers** (one modulation generator,
+Documentation of `lock_in+pid_harmonic2` **v2.4.8** (branch `master`, Ecosystem 2.0, FPGA built with
+Vivado 2020.1): the App `lock_in+pid_harmonic` 2.3.24 with **two lock-in amplifiers** (one modulation generator,
 two pairs of references with independent phases, two inputs). Back to the [project README](../README.md) ·
 [CHANGELOG](../CHANGELOG.md).
 

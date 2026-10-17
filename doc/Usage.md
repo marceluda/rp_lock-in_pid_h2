@@ -1,6 +1,6 @@
 # Using the App from the web interface
 
-How to use `lock_in+pid_harmonic2` **v2.4.4** from the browser, panel by panel, and the usual procedures:
+How to use `lock_in+pid_harmonic2` **v2.4.8** from the browser, panel by panel, and the usual procedures:
 scan, see a peak, get error signals with the two lock-ins, close a lock and check it. Technical data of each
 instrument is in [App.md](App.md); registers in [FPGA.md](FPGA.md).
 
@@ -10,7 +10,7 @@ instrument is in [App.md](App.md); registers in [FPGA.md](FPGA.md).
   - [Toolbar](#toolbar) · [Oscilloscope and Outputs](#oscilloscope-and-outputs) ·
     [Lock-in modules](#lock-in-modules) · [Ramp Controller](#ramp-controller) ·
     [PIDs modules](#pids-modules) · [Lock Control](#lock-control) · [Streaming](#streaming) ·
-    [Right panels and displays](#right-panels-and-displays)
+    [Right panels and displays](#right-panels-and-displays) · [Slow scans](#slow-scans)
 - [Options shown as "(n/a)"](#options-shown-as-na)
 - [Typing values with units](#typing-values-with-units)
 - [Procedures](#procedures)
@@ -24,11 +24,14 @@ instrument is in [App.md](App.md); registers in [FPGA.md](FPGA.md).
 - [Several clients, Restart and errors](#several-clients-restart-and-errors)
 - [Known limitations of the interface](#known-limitations-of-the-interface)
 
-The screenshots were taken on RP2 (RedPitaya_OS 2.04-35). Most are of this App (v2.4.3 / v2.4.4, during the
-tests of `reportes/lock-in_pid_h2.md` and `reportes/lock-in_pid_h2_lock_test/` and while writing this page).
-The files whose name starts with `h_` were taken with `lock_in+pid_harmonic` 2.3.14-2.3.17, whose panels
-(Ramp, PIDs, Lock Control, Config, Restart) are the same code; the title and the signal lists of the selectors
-are the only differences.
+The screenshots were taken on RP2 (RedPitaya_OS 2.04-35) with this App: v2.4.8 (the Oscilloscope, Ramp, PID A,
+Lock Control and Streaming panels, the lock sequence GIF and the 68.7 s range of [App.md](App.md)) and v2.4.3 /
+v2.4.4 (the rest, during the tests of `reportes/lock-in_pid_h2.md` and `reportes/lock-in_pid_h2_lock_test/`),
+against a simulated peak made by `dummy_simulator` on a second board, with the test configuration
+`test_files/lock_in+pid_harmonic2__lock_mode.json`. Some screenshots taller than the browser window are two
+screenshots of the same page joined. The files whose name starts with `h_` were taken with `lock_in+pid_harmonic`
+2.3.14-2.3.17, whose panels (PIDs, Config, Restart) are the same code; the title and the signal lists of the
+selectors are the only differences.
 
 ## Opening the App
 
@@ -36,7 +39,7 @@ Install the App (see the [README](../README.md#installation)) and open
 `http://rp-XXXXXX.local/lock_in+pid_harmonic2/` (or choose it in the main menu of the Red Pitaya). The page
 starts the App (loads the FPGA and the C controller) and restores the state of the previous session of the
 same browser tab. Use a single tab per board (see [Several clients](#several-clients-restart-and-errors)).
-The title reads **TWO Harmonic lock-in[+PID] (v2.4.4)**.
+The title reads **TWO Harmonic lock-in[+PID] (v2.4.8)**.
 
 ## Layout of the page
 
@@ -60,7 +63,7 @@ back.
 | Button | Action |
 |---|---|
 | Autoscale | Rescales the **Y axis** to the data on screen, only in the page. Does not end a lock capture. |
-| Reset zoom, zoom in/out, pan | Plot navigation. A zoom selects the time window of the acquisition (the decimation is chosen from it). Reset zoom (v2.4.7) sets the window from t = 0 to one period of the ramp (Ext Trig = Scan floor / Scan ceil), one period of the modulation (Ext Trig = harmonic mod., 2520·(hp+1) ticks, the same for both lock-ins) or one whole memory at the current decimation (otherwise), and Y to −1 … 1 V (raw mode −8192 … 8192). Periods of 1.5 s or more: 0.98 × the period, so that every scan is acquired. During a lock capture it first ends it, as AUTO, and uses the restored Ext Trig. The Raw Mode button rescales Y the same way. |
+| Reset zoom, zoom in/out, pan | Plot navigation. A zoom selects the time window of the acquisition (the decimation is chosen from it). Reset zoom (v2.4.7) sets the window from t = 0 to one period of the ramp (Ext Trig = Scan floor / Scan ceil), one period of the modulation (Ext Trig = harmonic mod., 2520·(hp+1) ticks, the same for both lock-ins) or one whole memory at the current decimation (otherwise), and Y to −1 … 1 V (raw mode −8192 … 8192). Periods of 1.5 s or more: 0.98 × the period, so that every scan is acquired ([Slow scans](#slow-scans)). During a lock capture it first ends it, as AUTO, and uses the restored Ext Trig. The Raw Mode button rescales Y the same way. |
 | Mouse wheel on the plot (v2.4.7) | Zoom centred on the mouse, 1.5× per step. **No key:** both axes (time and the two Y axes). **SHIFT** held: time axis only (the cursor becomes a horizontal double arrow ↔). **ALT** held: Y axes only (vertical double arrow ↕; in raw mode the Y range is in counts). The time window is sent to the controller once the wheel stops (250 ms), which chooses the decimation as for any zoom; it stays between 20 ns and 68.7 s. The Y zoom is only in the page (1/2048 … 1000 × full scale). During a lock capture the wheel zoom is only in the page; ending the capture restores the window saved before it. The wheel on the number fields is not affected (SHIFT ×10, CTRL ×100). |
 | Channel 1 / Channel 2 | Show or hide each channel. |
 | Stop | Stops the acquisition. |
@@ -72,7 +75,12 @@ back.
 
 ### Oscilloscope and Outputs
 
-![Oscilloscope and Outputs panels (v2.4.4, defaults)](.Usage/panel_oscilloscope_outputs.jpg)
+![Oscilloscope and Outputs panels: scan with ctrl_A and error, Normal trigger on Scan floor](.Usage/panel_oscilloscope_outputs.jpg)
+
+In the screenshot (`lock_mode`, no lock): OscA = ctrl_A, OscB = error, Ext Trig = Scan floor (with the row of
+*Presets*), Trigger External / Normal, after *Reset zoom* (0 … 64.16 ms); Out1 = ctrl_A, Out2 = 0. The triangle of
+the ramp (±0.61 V) and the error with its zero crossings at ≈ 16.6 ms and ≈ 48 ms (one per peak, on the way up
+and on the way down).
 
 - **OscA / OscB**: signal shown on Channel 1 / Channel 2, any of 25 internal signals: 0, in1, in2, error,
   ctrl_A, ctrl_B, Ramp A/B, pidA/B_in, PID A/B out, **cos_ref, cos_A, sin_A, cos_B, sin_B**, Xo, Yo,
@@ -93,7 +101,7 @@ back.
   names its two signals.
 - **More options**: *R|Phase Mode* (disabled) and *Disable anti-aliasing filter* for each channel.
 
-![More options (screenshot of _h)](.Usage/h_panel_oscilloscope_more_options.jpg)
+![More options](.Usage/panel_oscilloscope_more_options.jpg)
 
 - **Out1 / Out2**: signal sent to each fast output (±1 V): 0, in1, in2, in1−in2, error, cos_ref, PID A out,
   PID B out, ctrl_A, ctrl_B, aux_A, aux_B (cos_1f, cos_2f, cos_3f and sin_ref are "(n/a)"). For a lock,
@@ -125,13 +133,17 @@ only, no modulation) with the same phase, filter and gain, so X = X2 and Y = Y2:
 
 ### Ramp Controller
 
-![Ramp Controller panel (screenshot of _h)](.Usage/h_panel_ramp_controller.jpg)
+![Ramp Controller panel](.Usage/panel_ramp_controller.jpg)
 
 - **Ramp period** (`ramp_step`: ticks per step − 1; below, the resulting period τ and frequency f),
   **Ramp hig lim**, **Ramp low lim** (in counts, with the value in mV below), **Ramp B factor**
   (4096 = 1: ratio of Ramp B to Ramp A). The amplitude (mVpp) and centre (mVdc) are shown below.
 - **Scan reset** (hold at 0), **Scan enable** (the ramp runs; the *Scan enable* button of Lock Control
   must also be on), **Scan direction**, **Sawtooth** (otherwise triangle).
+
+In the screenshot (`lock_mode` with OscA = Ramp A, OscB = in1): ±5000 counts (±610 mV, 1221 mVpp), period 400,
+triangle (Sawtooth unchecked) → τ = 64.16 ms, f = 15.59 Hz; the two peaks of in1 (≈ 0.5 V) are seen on the way up
+and on the way down. The noise of in1 is that of the configuration, which disables the anti-aliasing filters.
 
 ### PIDs modules
 
@@ -143,15 +155,16 @@ only, no modulation) with the same phase, filter and gain, so X = X2 and Y = Y2:
 - **More Options** shows the set point *sp*, the scale selectors of kp (/1../4096), ki (8 ns..9 s) and kd
   (7.5 ns..491.5 µs), and *SAT lim* (saturation of the integral term, ±122 µV..±1 V):
 
-![PID A with More Options (screenshot of _h)](.Usage/h_panel_pidA_more_options.jpg)
+![PID A with More Options](.Usage/panel_pidA_more_options.jpg)
 
 ![PID A with ki scale 65 us (screenshot of _h)](.Usage/h_panel_pidA_isr_65us.jpg)
 
-In the example kp = −500 with /1024 gives −0.488, and ki = −20 with 537 ms gives τ = 26.8 ms.
+In the example (`lock_mode`) kp = −250 with /1024 gives −0.244, and ki = −20 with 537 ms gives τ = 26.8 ms
+(f = 37.3 Hz); kd = 0 (OFF), SAT ±1 V. (The *65 us* screenshot, of `_h`, has test values.)
 
 ### Lock Control
 
-![Lock Control panel (screenshot of _h)](.Usage/h_panel_lock_control.jpg)
+![Lock Control panel](.Usage/panel_lock_control.jpg)
 
 The main part of the panel (from top to bottom):
 
@@ -167,12 +180,13 @@ The main part of the panel (from top to bottom):
   the plot sets the trigger value and fires *Trigger Lock*. Design: [`lock_capture.md`](../lock_in+pid_harmonic2/doc/lock_capture.md).
 - **config** (open it with its title):
 
-![Lock Control config (screenshot of _h)](.Usage/h_panel_lock_control_config.jpg)
+![Lock Control config: Time trigger 16.58 ms](.Usage/panel_lock_control_config.jpg)
 
   - *Scan enable*, *PID A enable*, *PID B enable*: what is on **while LOCKED** (usually: scan off, PID A on).
   - *Trigger type*: OFF (only Lock Now), Time trigger, Level Trigger, Level+time Trigger.
   - *Time trigger*: delay after the scan floor, in ticks of 8 ns or with units (`16.58 ms`, `20 s`; see
-    [below](#typing-values-with-units)); shown as T below. 0 = OFF, up to 4294967295 = 34.36 s.
+    [below](#typing-values-with-units)); shown as T below (typing `16.58 ms` gives 2072500, T = 16.580 ms, as in the
+    screenshot; the test configuration uses 2072622). 0 = OFF, up to 4294967295 = 34.36 s.
   - *Signal for trigger* (error, Xo, Yo, X2o, Y2o, signal_i, Ramp A, aux_A, in1, in2, in1−in2, PID A out),
     *Level trigger* (counts or `V`/`mV`, shown in mV below), *trig upward?*: for the level trigger.
   - **Choose from graph**: the next click on the plot sets the time (Time trigger) or the level (Level trigger).
@@ -181,7 +195,11 @@ The main part of the panel (from top to bottom):
 
 - **Re-lock system** and **Step Responce Measurement** (open them with their titles):
 
-![Re-lock, step response and Monitor (screenshot of _h)](.Usage/h_panel_relock_monitor.jpg)
+![Re-lock, step response and Monitor, with the loop closed](.Usage/panel_relock_monitor.jpg)
+
+  In the screenshot the loop is closed (LOCKED with the Time trigger, then Trigger Mode Auto): ctrl_A and error are
+  flat, and the Monitor shows error mean −0.011 and std 26.82 counts (≈ 3.3 mV with kp = −250).
+
 
   - Re-lock: *Error Enable* with `|error| >` threshold, *Signal Enable* with a signal `<` threshold,
     *RL reset*. Not tested on this version (see [App.md](App.md#re-lock-and-step-response)).
@@ -191,13 +209,13 @@ How the lock control works inside: [`lock_control.md`](../lock_in+pid_harmonic2/
 
 ### Streaming
 
-![Streaming panel (v2.4.3)](.Usage/panel_streaming_v2.4.3.jpg)
+![Streaming panel, below the Lock Control config](.Usage/panel_streaming.jpg)
 
 - **IP** (the *IP* button fills in the address of the computer running the browser), **Port** (6000 for
   the server of `resources/streaming`), **Streaming Rate** (1.95 MS/s .. 1.9 kS/s; 0.98 MS/s is the fastest
   continuous rate); Δt below.
-- **Prepare Streaming** starts `c/streaming` on the board and leaves the scope of the page in Single (the page
-  stops polling); **Start** / **Stop** send the data.
+- **Prepare Streaming** starts `c/streaming` on the board and leaves the scope of the page in Single (since v2.4.5
+  the page keeps polling once per second in Single); **Start** / **Stop** send the data.
 - Start the receiver on the computer first (`resources/streaming/server`, or `nc -l <port>`); details in
   `resources/README.md`. Avoid opening `ssh` sessions on the board while streaming at 0.98 MS/s
   ([App.md](App.md#streaming)).
@@ -214,6 +232,26 @@ How the lock control works inside: [`lock_control.md`](../lock_in+pid_harmonic2/
   14-bit outputs at gain ×1).
 - **Monitor**: mean and standard deviation of the error over ~1 s, in counts.
 
+### Slow scans
+
+With windows of 1.5 s or more (e.g. a 30 s ramp) the scope reads its memory while the FPGA is still writing it.
+Since v2.4.7 (port of `lock_in+pid_harmonic` v2.3.23, see the CHANGELOG):
+
+- **Reset zoom** on a scan of period T ≥ 1.5 s (Ext Trig = Scan floor / Scan ceil / harmonic mod.) sets the window
+  to 0 … 0.98 × T (at least 50 ms before the next trigger), so that the scope is armed again in time and every scan
+  is acquired. Shorter periods keep one whole period.
+- The trace is drawn **while it is acquired**, only with valid points of the current acquisition (it starts and
+  ends at the valid ones, never mixed with an older lap of the memory, and the previous trace is not left to the
+  right). In Normal mode the **whole trace is only seen near the end of each scan**: between the end of the
+  window (0.98 × T) and the next scan floor. In Auto mode the same happens for every acquisition: the
+  [68.7 s screenshot](App.md#oscilloscope) shows a whole acquisition just before the next one starts.
+- **Capture Lock** works with slow scans (Time trigger, Level trigger and Lock Now): the lock request is held until
+  the scope has loaded its **history before the lock** (the part of the window before t = 0; banner "loading the
+  scope history before the lock (x s)"), then the lock is applied and the capture is drawn as it is acquired.
+  Lock Now on a slow window therefore locks after that history, on purpose.
+- (FPGA) A time trigger armed after the ramp was stopped (e.g. right after releasing a lock) waits for the next
+  scan floor instead of firing in the middle of the scan.
+
 ## Options shown as "(n/a)"
 
 The FPGA of this App has no `sin_ref`, `cos_1f`, `cos_2f`, `cos_3f` nor `F3o` (they are 0). The selectors keep
@@ -223,13 +261,13 @@ those values, so that indices and saved configs stay the same as in `_h`, but sh
 ![Out1 with the (n/a) options (v0.4.0)](.Usage/out1_na_options_v0.4.0.png)
 
 A config that selects one of them is loaded anyway (the output is 0) and a warning is written in the browser
-console (`warnNaSwitches()`, `index.html` l. 3852). The *Signal for trigger* list of Lock Control does not mark
-them (5 "F3o" and 6-8 with code text are 0).
+console (`warnNaSwitches()`, `index.html` l. 4365). The *Signal for trigger* list of Lock Control does not mark
+them: 5 "F3o" is 0 without "(n/a)"; 6-8 are labelled "0 (sqXo)" … since v2.4.5 (code text before).
 
 ## Typing values with units
 
 The **Time trigger** and **Level trigger** fields of *Lock Control → config* are text fields that accept a number
-with a unit (`index.html` l. 2271-2285, `parseTrigTime()`, `parseTrigLevel()`):
+with a unit (`index.html` l. 2340-2354, `parseTrigTime()`, `parseTrigLevel()`):
 
 | Field | Without unit | Units | Range | Examples (tested on the board, v2.4.4) |
 |---|---|---|---|---|
@@ -249,7 +287,7 @@ with a unit (`index.html` l. 2271-2285, `parseTrigTime()`, `parseTrigLevel()`):
 Other fields have older unit conversions in the JavaScript, but they are `<input type="number">` fields, where
 browsers do not let letters be typed: **a confirmar** whether they can be used from the UI. Those conversions
 are: ramp limits and PID sp (`V`, `mV`), ramp period (`s`, `ms`), period of the oscillator (`s`, `ms`, `us`) and
-**Phase A / Phase B** (`deg`, `rad`, `pi`; `index.html` l. 2150-2180).
+**Phase A / Phase B** (`deg`, `rad`, `pi`; `index.html` l. 2219-2249).
 
 ## Procedures
 
@@ -264,7 +302,9 @@ Phase A = 0, Phase B = 630 and Lock-in input B = in1): a system with a resonance
 2. **Ramp Controller**: limits ±5000 (±610 mV), period 400 (triangle: 64.16 ms), *Scan enable* checked.
 3. **Lock Control**: *Scan enable* button on, *PID A enable* off.
 4. **Oscilloscope**: OscA = `Ramp A` (or `ctrl_A`), OscB = `in1`; Ext Trig = *Scan floor*.
-5. **Trigger**: Source *External*, Mode *Normal*. Zoom to one period of the ramp: t = 0 is the scan floor.
+5. **Trigger**: Source *External*, Mode *Normal* (picking an Ext Trig already sets them, v2.4.8). Press
+   **Reset zoom**: the window goes from 0 to one period of the ramp (0 … 64.16 ms) and t = 0 is the scan floor.
+   The preset `in1|ctrl` sets the same pair in one click (with in1 on Channel 1 and ctrl_A on Channel 2).
 
 The response of the system (the peak) appears on Channel 2 at the same position in every sweep.
 
@@ -276,7 +316,7 @@ the error signal for the PID.
 
 1. **Lock-in modules**: Lock-in input A = `in1`; Period = 0 (49.6 kHz); *A Out1* = 100 (modulation of ≈ 6 mV
    added to OUT1); tab LI A: filter 262 µs | 607 Hz, order 2, Amplification ×32.
-2. Look at `Xo` and `Yo` (OscA/OscB) during the scan: change **Phase A** or choose the component (X or Y)
+2. Look at `Xo` and `Yo` (OscA/OscB, preset `X|Y`) during the scan: change **Phase A** or choose the component (X or Y)
    that gives a clean dispersive curve with a zero crossing at the peak. The references can be checked on the
    scope (OscA = `cos_ref`, OscB = `cos_A` or `cos_B`):
 
@@ -286,13 +326,15 @@ the error signal for the PID.
    another detector), **Phase B** (630 = 90° gives the quadrature of lock-in A: X2 = Y, Y2 = −X), tab LI B.
 4. **PIDs modules**: Error signal = the chosen component (`Yo` in the test configuration; `X2o`/`Y2o` are also
    possible), offset 0.
-5. OscA = `ctrl_A`, OscB = `error`: the error crosses zero at the peak (see the [layout](#layout-of-the-page)
-   screenshot).
+5. OscA = `ctrl_A`, OscB = `error` (preset `ctrl|err`): the error crosses zero at the peak (see the
+   [layout](#layout-of-the-page) and [Oscilloscope](#oscilloscope-and-outputs) screenshots).
 
 ### 3. Close the lock
 
-1. **PID A**: input = error, kp = −500 (/1024), ki = −20 (537 ms). The sign of the gains has to give
-   negative feedback around the zero crossing (try the other sign if the lock runs away).
+1. **PID A**: input = error, kp = −250 (/1024, −0.244), ki = −20 (537 ms, τ = 26.8 ms), as in the test
+   configuration since 2026-10-12. The sign of the gains has to give negative feedback around the zero crossing
+   (try the other sign if the lock runs away). The lock tests of v2.4.4 and some screenshots of this procedure
+   were made with the kp = −500 used before, which gives a noisier lock (error std ~7.7 mV instead of ~3.3 mV).
 2. **Lock Control → config**: while locked, *PID A enable* on and *Scan enable* off.
 3. Choose the trigger:
    - **Time trigger**: press *Choose from graph* and click on the zero crossing of the error (16.58-16.62 ms in
@@ -307,10 +349,17 @@ the error signal for the PID.
 
 ![Capture Lock + Fire on click: t = 0 is the lock, 16.6 ms after the scan floor (v2.4.4)](.Usage/capture_lock_fire_on_click.jpg)
 
-The whole sequence (Choose from graph, Trigger Lock, Auto, X2/Y2, release, Level trigger, Scan enable / Lock
-Now, Capture + Fire on click, AUTO), recorded by testAgent on v2.4.4:
+The whole sequence on v2.4.8 (13 frames): scan, *Choose from graph*, click on the zero crossing (16.58 ms) →
+LOCKED with the capture frozen, Mode Auto (flat traces), release; **Level trigger** (error, 5085 = 621 mV) →
+LOCKED, "Lock captured (t = 0: lock)"; back to the Time trigger, Trigger Lock, *Choose from graph* on the frozen
+capture and a click at t = −1.03 ms (**Fire on click**) → new lock with Time trigger 1944048 (T = 15.552 ms,
+"15.6 ms after the scan floor"), Auto:
 
 ![Lock sequence (GIF)](.Usage/lock_sequence_time_level_capture_fire.gif)
+
+Fire on click needs the capture of a **Time trigger** lock: on a capture of a Level trigger lock (t = 0 is the
+level crossing, not a known time after the scan floor) a click with *Choose from graph* does nothing (seen by
+testAgent on v2.4.8; Esc leaves the choosing mode).
 
 If *Choose from graph* shows the red warning, t = 0 of the plot is not the scan floor and the time taken
 from the click would be wrong:
@@ -332,7 +381,9 @@ while waiting. *Autoscale* keeps it.
 
 ![Locked: in1 and error (v2.4.4)](.Usage/locked_time_in1_error.jpg)
 
-3. The **Monitor** panel shows the mean (≈ 0) and the std of the error (≈ 63 counts ≈ 7.7 mV in the tests).
+3. The **Monitor** panel shows the mean (≈ 0) and the std of the error: ≈ 27 counts ≈ 3.3 mV with kp = −250
+   (26.82 counts in the [screenshot](#lock-control) of the Monitor, v2.4.8). With the kp = −500 of the
+   configuration before 2026-10-12 it was ≈ 63 counts ≈ 7.7 mV (tests of v2.4.4).
 4. **Release**: a second click on *Trigger Lock* (or *Lock Now*), or a click on *Scan enable* (restarts the
    scan with the PIDs as they were).
 
@@ -394,9 +445,9 @@ Specific of this App: a failed `GET /data` is retried and the error dialog appea
 failures; a failed `POST /data` chunk (E3) is shown as a toast ("The sent params were PROBABLY not applied")
 instead of a dialog.
 
-After *Prepare Streaming* the page is in Single and does not poll, so a stop of the App made from outside is not
-noticed until something is touched; then "Application not loaded" appears and *Restart* restores the state
-(including the streaming IP):
+After *Prepare Streaming* the page is in Single; up to v2.4.4 it did not poll, so a stop of the App made from
+outside was not noticed until something was touched (since v2.4.5 it polls once per second in Single). Then
+"Application not loaded" appears and *Restart* restores the state (including the streaming IP):
 
 ![Application not loaded after streaming (v2.4.3)](.Usage/app_not_loaded_after_streaming.jpg)
 
@@ -405,18 +456,11 @@ noticed until something is touched; then "Application not loaded" appears and *R
 - The **Slow outputs** selectors have no effect; the **R|Phase Mode** button is disabled.
 - *Time trigger* values above 2²⁴ ticks (134 ms) set from the page are rounded to the float32 grid (≤ 1 µs).
 - *Ramp period* typed in `s`/`ms` sets `ramp_step` for (hig − low) steps, i.e. half of the period in
-  triangle mode (`index.html` l. 1855-1858): check the τ shown below the field.
-- *Signal for trigger* 5 is "F3o" (0) without "(n/a)" and 6-8 show code text (`/*sqXo */ 14'b0`): those options
-  are 0.
+  triangle mode (`index.html` l. 1924-1927): check the τ shown below the field.
+- *Signal for trigger* 5 is "F3o" (0) without "(n/a)"; 6-8 are 0 (labelled "0 (sqXo)" … since v2.4.5).
 - Each change made in the page is a `POST /data`, and on Ecosystem 2.0 each one leaves an open connection in the
   nginx of the board; after ~1000 the board stops answering until nginx is restarted
   ([Remote.md](Remote.md#known-issue-of-the-ecosystem-post-data-leaves-connections-open)).
-- Config → load also sends read-only parameters (`meas_*`, `lock_X`, `lock_Y`, `lock_X2`, `lock_Y2`,
-  `lock_lock_status`, `lock_lock_control`; 206 keys per load, seen by testAgent): the controller ignores them,
-  they only make the load longer.
-- After *Prepare Streaming* the page does not detect an external stop of the App (above).
-- Console message "Capture Lock: ended by , scope settings restored" (empty reason) when a capture ends with
-  AUTO (cosmetic).
 - Level+time with the time after the level crossing stays ARMED (the level crossing has to happen after
   the time).
 

@@ -23,8 +23,8 @@ Current version: **2.4.8** (branch `master`).
 This version is **based on the 0.4.x series (v0.4.2), with the FPGA design built in Vivado 2020.1**,
 using the project structure of [RedPitaya-FPGA](https://github.com/RedPitaya/RedPitaya-FPGA)
 (project `v0.94`, model `Z10`). It is intended for the Red Pitaya **Ecosystem 2.0**
-(e.g. `RedPitaya_OS_2.04`; tested on 2.04-35). The 0.4.x series (branch `master`, FPGA with Vivado 2015.2) is the
-version for the 0.9x / 1.0 ecosystems.
+(e.g. `RedPitaya_OS_2.04`; tested on 2.04-35). Since 2026-10-15 the branch `master` holds the 2.x series; the
+0.4.x series (FPGA with Vivado 2015.2), for the 0.9x / 1.0 ecosystems, stays in the tags `v0.4.0` .. `v0.4.2`.
 
 - v2.4.3: the port of [rp_lock-in_pid_h](https://github.com/marceluda/rp_lock-in_pid_h) v2.3.10-2.3.11 (FPGA in
   Vivado 2020.1, oscilloscope of the Ecosystem 2.0 with time ranges up to ~68 s, streaming and UI fixes) plus the
@@ -133,7 +133,7 @@ To build or modify the App you need a linux development environment with:
   - Vivado 2020.1 (FPGA and `bootgen`), in `/tools/Xilinx/Vivado/2020.1` (`lock_in+pid_harmonic2/fpga/Makefile`
     loads it by itself; override with `VIVADO_SETTINGS=...`)
   - gcc-linaro-4.9-2015.02-3-x86_64_arm-linux-gnueabihf (installed on `/opt/linaro/`)
-  - (the 0.4.x series, branch `master`, used Vivado 2015.2; `settings.sh` still sources it if present)
+  - (the 0.4.x series, tags `v0.4.0` .. `v0.4.2`, used Vivado 2015.2; `settings.sh` still sources it if present)
 
 The App was based on code from project:
 https://github.com/RedPitaya/RedPitaya/tree/release-v0.95/apps-free/scope

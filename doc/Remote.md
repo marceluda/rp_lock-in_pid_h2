@@ -1,9 +1,10 @@
 # Remote control
 
-How to control `lock_in+pid_harmonic2` **v2.4.4** from a program, without the web page. The registers are
+How to control `lock_in+pid_harmonic2` **v2.4.8** (branch `master`) from a program, without the web page. The registers are
 described in [FPGA.md](FPGA.md); the meaning of each instrument in [App.md](App.md).
 
-The HTTP API, the Python client and the scripts are those of `lock_in+pid_harmonic` 2.3.17 adapted to this App
+The HTTP API, the Python client and the scripts are those of `lock_in+pid_harmonic` 2.3.17 (later versions of
+`_h`, up to 2.3.24, did not change them except the fixes of 2.3.18, in h2 2.4.5) adapted to this App
 (two lock-ins, register map shifted from 0x054). Everything addresses registers **by name**, so code written
 for `_h` that uses names works here, except for the names that changed: `gen_mod_phase` → `gen_mod_phase_A` /
 `gen_mod_phase_B`, `F1_28`/`F2_28` → `X2_28`/`Y2_28`, and the selector labels (`sin_ref`, `cos_1f..3f`, `F1o..F3o`
@@ -394,7 +395,7 @@ X, Y, X2, Y2 = (r[k] / 2**11 / 8192 for k in ('X_28', 'Y_28', 'X2_28', 'Y2_28'))
 ### Configure a PID and the ramp
 
 ```python
-rp.set_pid('A', sw='error', sp=0, kp=-500, PSR='/1024',   # kp = -0.488
+rp.set_pid('A', sw='error', sp=0, kp=-250, PSR='/1024',   # kp = -0.244 (lock_mode config since 2026-10-12)
            ki=-20, ISR='537 ms',                          # tau_i = 537 ms / 20 = 26.8 ms
            kd=0, SAT=13, ctrl=0)                          # integral term limited to +-1 V
 rp.lock.out1_sw = 'ctrl_A'                                # OUT1 = PID A + ramp A (out1_sw = 12)
@@ -462,6 +463,10 @@ Notes:
 - Changing a manual enable (bits 4:2) while LOCKED releases the lock.
 - `lock_trig_time` is 32 bits unsigned (up to 34.36 s). Written through `/lock` the value is exact; written from
   the web page it is rounded to float32 above 2²⁴ ticks.
+- Since v2.4.7 (FPGA) the time trigger only counts from a scan floor of a ramp that kept running: a Trigger Lock
+  armed right after a release or with the ramp stopped waits for the next floor and fires at floor + time (before,
+  it could fire in the middle of the scan). The `time=16.58e-3` / `timeout=10` of the examples are for the 64 ms
+  scan of the test configuration; with slow ramps use a timeout longer than the period.
 
 ### Read an oscilloscope acquisition
 
@@ -527,9 +532,9 @@ python3 py/lock_reg_table.py               # the register map of this App
 `--force`, `--timeout`). Tested by ssh with the page open (v2.4.4): `--trig time --time 16.58ms --set pidA`
 LOCKED in 0.028 s, `--trig level --level 5085` in 0.049 s, `--trig time --time 2072622` in 0.022 s, `--now`,
 `--release`, `--time 20s` → ARMED with 2500000000; the page followed OFF/ARMED/LOCKED, the Time trigger field and
-the Trigger type with 0 POST. Known problems: `--time 40s` ends with `OverflowError` in `hugo.py` (`parse_time()`
-does not clamp to 2³²−1, inherited from `_h`; use ≤ 34.36 s); its docstring lists `lock_trig_sw` 3/4 as "F1/F2" (in
-this App they are X2o/Y2o).
+the Trigger type with 0 POST. Up to v2.4.4 `--time 40s` ended with `OverflowError` and the docstring listed
+`lock_trig_sw` 3/4 as "F1/F2"; since v2.4.5 the time is clamped to 0..2³²−1 ticks with a message and the docstring
+says 3 X2o, 4 Y2o.
 
 The scripts other than `lock_from_registers.py` and `lock_reg_table.py` have not been re-tested on the 2.x
 version (**a confirmar**); `osc_trig.py` waits for `TrgSrc == 0`, which is not valid on the 2.0 scope. Running
@@ -558,4 +563,4 @@ Not tested on this App (**a confirmar**). New scripts should use the HTTP API.
   [open connections](#known-issue-of-the-ecosystem-post-data-leaves-connections-open) of nginx.
 - Opening the page in a new tab restores that tab's state and sends the transient commands
   (`lock_ctrl_aux_lock_now`, `lock_ctrl_aux_launch_lock_trig`, `lock_stream_cmd`) as 0
-  (`index.html` l. 177, `state_transient_zero`), which **probably releases an active lock** (a confirmar).
+  (`index.html` l. 208, `state_transient_zero`), which **probably releases an active lock** (a confirmar).
