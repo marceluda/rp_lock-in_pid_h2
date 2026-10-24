@@ -18,7 +18,7 @@ Video from lock-in+PID Harmonic version:
 
 ## Version 2.4.x (Ecosystem 2.0)
 
-Current version: **2.4.11** (branch `master`).
+Current version: **2.4.12** (branch `master`).
 
 This version is **based on the 0.4.x series (v0.4.2), with the FPGA design built in Vivado 2020.1**,
 using the project structure of [RedPitaya-FPGA](https://github.com/RedPitaya/RedPitaya-FPGA)
@@ -67,6 +67,9 @@ using the project structure of [RedPitaya-FPGA](https://github.com/RedPitaya/Red
   **time+level** between Trigger Lock and Lock Now: one click on a button and one on the graph set the trigger type and
   value and fire Trigger Lock. Fixed: a click with Choose from graph + Fire on click during a POST in flight lost the new
   values or the re-lock.
+- v2.4.12 (from lock_in+pid_harmonic 2.3.29): **Raw Mode**: the *Level* of the scope trigger is in ADC counts (field,
+  slider, line; −8192 … 8191) and the controller writes those counts to the scope (it took them as volts: Normal /
+  Single never triggered for a level other than 0); AUTO in Raw Mode with its Y range in counts (it was clipped to ±1000).
 - See the [CHANGELOG](CHANGELOG.md).
 
 **Register map.** The lock module has 102 registers; from `0x054` on the addresses are shifted with respect to
