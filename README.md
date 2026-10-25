@@ -18,7 +18,7 @@ Video from lock-in+PID Harmonic version:
 
 ## Version 2.4.x (Ecosystem 2.0)
 
-Current version: **2.4.12** (branch `master`).
+Current version: **2.4.13** (branch `master`).
 
 This version is **based on the 0.4.x series (v0.4.2), with the FPGA design built in Vivado 2020.1**,
 using the project structure of [RedPitaya-FPGA](https://github.com/RedPitaya/RedPitaya-FPGA)
@@ -70,6 +70,10 @@ using the project structure of [RedPitaya-FPGA](https://github.com/RedPitaya/Red
 - v2.4.12 (from lock_in+pid_harmonic 2.3.29): **Raw Mode**: the *Level* of the scope trigger is in ADC counts (field,
   slider, line; −8192 … 8191) and the controller writes those counts to the scope (it took them as volts: Normal /
   Single never triggered for a level other than 0); AUTO in Raw Mode with its Y range in counts (it was clipped to ±1000).
+- v2.4.13 (from lock_in+pid_harmonic 2.3.30): **AUTO** puts the trigger level at the middle of the signal also with a
+  calibration offset of the input (in volts it was one offset off: above in its search, below in the level it left) or
+  a calibrated full scale other than 1 V (level and Y range were scaled by 1 / full scale); in Raw Mode it gives a
+  whole count and half counts are rounded as the page shows them (−2.5 was shown as −2 and written as −3).
 - See the [CHANGELOG](CHANGELOG.md).
 
 **Register map.** The lock module has 102 registers; from `0x054` on the addresses are shifted with respect to
